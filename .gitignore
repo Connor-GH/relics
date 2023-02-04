@@ -1,0 +1,7 @@
+/16bit/boot.s
+/16bit/gdt.s
+/Binaries/*
+/LOC.sh
+/compile.sh
+/lifesaver.sh
+/turn-off-qemu.sh
