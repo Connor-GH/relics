@@ -56,6 +56,7 @@ int init_kernel(void) {
 
     TRANSITION(2);
 
+
     init_vga(WHITE, BRIGHT_MAGENTA);
     reset_video_memory();
 
@@ -64,13 +65,13 @@ int init_kernel(void) {
     print_string("Size of relics var: ");
     print_int(strlen(relics));
     print_string("\n");
-    print_string("Root-level Extended Linux-like Integrated Computing System\n");
+    print_string("Raw Exokernel-LibraryOS Integrated Computing System\n");
     print_string("Relics can also be called \"Relix\".\n");
     print_string("\n");
     print_string("UNIX Once stood for \"Uniplexed Information [and] Computing System\",\n");
     print_string("and at some point the 'CS' got changed to an 'X'.\n");
     print_string("\n");
-    print_string("Welcome to 32-bit protected mode!\n");
+    print_string("Welcome to 64-bit long mode!\n");
     print_string("All of this was printed from the kernel!\n");
 
 
