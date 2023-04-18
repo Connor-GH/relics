@@ -16,6 +16,9 @@ compile with:
 
 
 # Mandatory Dependencies:
-- clang
+- clang/gcc
 - gmake
 - QEMU-x86_64
+
+Fair warning: use either the lld, gold, or mold linker.
+The BFD linker works, but is not ideal.
