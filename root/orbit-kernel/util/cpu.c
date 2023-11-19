@@ -7,22 +7,9 @@
 #define _BITUL(x) (_UL(1) << (x))
 
 static u32 cpu_vendor[3];
-u8 cpu_vendor_name[13];
-typedef struct cpu_features_struct {
-    _Bool fpu;
-    _Bool cpuid;
-    _Bool mmx;
-    _Bool sse;
-    _Bool sse2;
-    _Bool ssse3;
-    _Bool sse4_1;
-    _Bool sse4_2;
-    _Bool avx;
-    _Bool avx2;
-    _Bool avx512;
-} cpu_features_struct;
+u8 cpu_vendor_name[13] = {0};
 
-static cpu_features_struct cpu_features = {
+cpu_features_struct cpu_features = {
     .fpu = 0,
     .cpuid = 0,
     .mmx = 0,
@@ -108,11 +95,10 @@ static int has_sse(void) {
 
     cpuid_call(0x1, 0, &a, &b, &c, &d);
     if ((d & (1 << 25)) == 0) {
+        /* storage for FPU to return to and such, aligned for performance */
         char fxsave_region[512] __attribute__((aligned(16)));
         __asm__ __volatile__ ("fxsave %0" : : "m"(fxsave_region));
-        printk("LOG: SSE: AVAILABLE\n");
         /* activate SSE */
-        /* 3 << 9 */
         __asm__ __volatile__
             ("mov %%cr0, %%rax\t\n"
             "and $0xFFFB, %%ax\t\n"
@@ -124,13 +110,11 @@ static int has_sse(void) {
             :
             :
             : );
-        printk("LOG: SSE: ACTIVATED\n");
         /* TODO: check for fxsr bit in CPUID */
 
-        /* storage for FPU to return to and such, aligned for performance */
         return 1;
     } else {
-        printk("Something went wrong with the SSE process\n");
+        log_printk("Something went wrong with the SSE process\n");
         return 0;
     }
 }
@@ -144,11 +128,14 @@ void cpuflags(void) {
     u32 intel_level;
     if (has_fpu() > 0) {/* activate fpu */
         cpu_features.fpu = 1;
+        log_printk("FPU available\n");
     } else {
         halt(); /* no FPU; halt */
     }
-    if (has_sse() > 0)
+    if (has_sse() > 0) {
         cpu_features.sse = 1;
+        log_printk("SSE available\n");
+    }
 
     /* Check whether the ID bit in eflags is supported. Support means
      * that use of cpuid is available. */
@@ -169,6 +156,9 @@ void cpuflags(void) {
 
 void set_cpu_vendor_name(void) {
     u32 bitmask = 255; // 11111111
+    _Bool need_to_log = 0;
+    if (cpu_vendor_name[0] == 0)
+        need_to_log = 1;
     cpuflags();
     cpu_vendor_name[0] = (char)(cpu_vendor[0] & bitmask); // lower 7-0 bits
     cpu_vendor_name[1] = (char)((cpu_vendor[0] & (bitmask << 8)) >> 8); // 15-8 bits
@@ -183,4 +173,6 @@ void set_cpu_vendor_name(void) {
     cpu_vendor_name[10] = (char)((cpu_vendor[2] & (bitmask << 16)) >> 16);
     cpu_vendor_name[11] = (char)((cpu_vendor[2] & (bitmask << 24)) >> 24);
     cpu_vendor_name[12] = '\0';
+    if (need_to_log)
+        log_printk("CPU Vendor: %s\n", cpu_vendor_name);
 }

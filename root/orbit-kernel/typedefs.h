@@ -11,7 +11,7 @@
  * This way, if someone on ARM decides
  * to try and compile this, it will not
  * only fail because of the massive
- * ammount of assembly and machine-specific
+ * amount of assembly and machine-specific
  * code, but there also won't be stdint
  * types :) */
 #ifdef __X86_64__

@@ -3,7 +3,7 @@
 #include <panic.h>
 
 
-#define ERR_MSG (" unrecoverable error has occured.\n" \
+#define ERR_MSG (" unrecoverable error has occurred.\n" \
         "The system will now go into an infinite loop.\n" \
         "Please restart the system through hardware.\n")
 
@@ -20,7 +20,7 @@ __attribute__((noreturn)) void panic(int i) {
     case GENERIC_ISSUE: issue = "generic"; break;
     }
 
-    printk("A %s unrecoverable error has occured.\n"
+    printk("A %s unrecoverable error has occurred.\n"
         "The system will now go into an infinite loop.\n"
         "Please restart the system through hardware.\n", issue);
 

@@ -1,65 +1,102 @@
 #include <stddef.h>
+#include <stdbool.h>
 #include <memory.h>
 #include <kio.h>
 
-#define END_OF_MEM (0x1E8FFFF)
+#define END_OF_MEM (0x1CE8FFFF)
 #define MEMSTART (0xC0000)
-static unsigned int j = 0; // bytes of memory available
 
-static size_t mem_current_ptr = MEMSTART;
-static size_t last_size_allocated = 0;
-static size_t MEMALLOCEND = END_OF_MEM; // end of vga console
+enum MEM_PAGE {
+	MEM_UNUSABLE = 0,
+	MEM_USABLE,
+	MEM_RESERVED,
+};
+
+static size_t j = END_OF_MEM-MEMSTART; // bytes of memory available
+
+struct mem_page {
+	enum MEM_PAGE usable;// = MEM_USABLE;
+	void *beginning_ptr;
+	void *end_ptr;
+};
 
 
-__attribute__((optnone))
-static unsigned int calculate_end_of_mem(void) {
-    //int32_t undefined_mem;
-    //void *undefined_mem_ptr = &undefined_mem;
-    uint8_t *currentaddr = (uint8_t *)0x1;
-    uint32_t counter = 0;
-    while (currentaddr != (void *)0x0/*undefined_mem_ptr*/) {
-        currentaddr++;
-        counter++;
-        printk("%u\t%d\n", (uint32_t)*currentaddr, counter);
-    }
-    printk("Results: %u, %d\n, ",
-    (uint32_t) *currentaddr,
-    counter);
-    return *currentaddr;
+static struct mem_page *bootstrap_mem;
+static struct mem_page *pages[] = {0};
+static void bootstrap_malloc(void) {
+	struct mem_page *page = (void *)(MEMSTART);
+	page->usable = MEM_RESERVED;
+	page->beginning_ptr = (void *)MEMSTART;
+	page->end_ptr = (void *)(MEMSTART+4096);
+	bootstrap_mem = page;
 }
-void init_all_memory(void) {
+uint32_t init_all_memory(void) {
     /*
-     * The OS is currently hardcoded
-     * to only initialize 32M (29M) of memory.
-     * there will be a system later implemented to
-     * detect the amount of ram the system has,
-     * and initialize all of it.
+     * Detect the amount of ram the system has.
      */
-    calculate_end_of_mem();
+    /* Talk to CMOS to get amount of ram */
+    uint8_t lowmem, highmem;
+    outb(0x70,0x30);
+    lowmem = inb(0x71);
+    outb(0x70, 0x31);
+    highmem = inb(0x71);
+
+    return lowmem | highmem << 8;
 }
 
 int all_mem_available_bytes(void) {
     return j;
 }
-void *malloc(size_t size) {
-    size_t current_alloc_end = mem_current_ptr + size;
 
-    if (current_alloc_end >= END_OF_MEM)
-        return NULL; /* TODO return ENOMEM */
-
-    for (size_t i = 0; i < size; i++)
-        *(size_t *)(mem_current_ptr + i) = '0';
-
-    *(size_t *)(mem_current_ptr + size) = '\0';
-
-    mem_current_ptr += size;
-    last_size_allocated = size;
-    return (void *)(mem_current_ptr);
+void mem_into_pages(void) {
+	bootstrap_malloc();
+	pages[0] = bootstrap_mem;
+	size_t j = 1;
+	size_t i = 4096;
+	while ((i < END_OF_MEM) && (j < 4095)) {
+		struct mem_page *temp = (void *)(MEMSTART + j * 30);
+		temp->usable = MEM_USABLE;
+		temp->beginning_ptr = (void *)(MEMSTART+i);
+		temp->end_ptr = (void *)(MEMSTART+i+4096);
+		pages[j] = temp;
+		i+=4096;
+		j++;
+	}
 }
 
-void free(void *ptr) {
+void *grab_good_page(void) {
+	for (int i = 0; pages[i]; i++) {
+		if (pages[i]->usable == MEM_USABLE) {
+			pages[i]->usable = MEM_UNUSABLE;
+			return (void *)&pages[i]->beginning_ptr;
+		}
+	}
+	return NULL;
+}
+static void *malloc_4096_bytes_or_less(size_t size) {
+	void *good_page = grab_good_page();
+	if (good_page == NULL) {
+		return NULL;
+	}
+	return good_page;
 
-    for (size_t i = last_size_allocated; i > 0; i--)
-        *(char *)((char *)ptr - i) = '\0';
-    mem_current_ptr -= last_size_allocated;
+}
+void *malloc(size_t size) {
+	if (size < 4096)
+		return malloc_4096_bytes_or_less(size);
+	else
+		return NULL;
+}
+void free(void *ptr) {
+	if (ptr == NULL) {
+		printk("Tried to free NULL pointer\n");
+		return;
+	}
+	for (int i = 0; pages[i]; i++) {
+		if (ptr == &pages[i]->beginning_ptr) {
+			pages[i]->usable = MEM_USABLE;
+			return;
+		}
+	}
+	printk("Invalid free issue\n");
 }

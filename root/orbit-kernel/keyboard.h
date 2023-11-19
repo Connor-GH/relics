@@ -4,7 +4,6 @@
 #include <typedefs.h>
 #include <port_functions.h>
 char get_input_keycode(void);
-void sleep(uint32_t timer_count);
 void test_input(void);
 
 #define KEYBOARD_PORT 0x60

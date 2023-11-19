@@ -1,7 +1,7 @@
-/16bit/boot.s
-/16bit/gdt.s
-/Binaries/*
-/LOC.sh
-/compile.sh
-/lifesaver.sh
-/turnon-off-qemu.sh
+/bin/*
+*.o
+*.bak
+/scripts/compile.sh
+/scripts/lifesaver.sh
+/scripts/turnon-off-qemu.sh
+/cscope.out

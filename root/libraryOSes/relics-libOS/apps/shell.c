@@ -7,6 +7,7 @@
 #include <orbit-kernel/cpu.h>
 #include <orbit-kernel/panic.h>
 
+static void sleep(int x) { for (int i = 0; i < x; i++) { __asm__ __volatile__("nop");}}
 static void fetchme_builtin(void) {
     set_cpu_vendor_name();
     printk

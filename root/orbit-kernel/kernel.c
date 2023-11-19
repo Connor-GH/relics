@@ -10,38 +10,56 @@
 #include <cpu.h>
 #include <vga.h>
 #include <idt.h>
+#include <pic.h>
 
-/*
- * sleep() uses NOPs here. It is
- * entirely processor-dependant.
- */
+
+static void sleep(int x) { for (int i = 0; i < x; i++) { __asm__ __volatile__("nop");}}
 
 #define TRANSITION(x) \
 \
 for (int i = x; i > 0; i--) { \
     printk("Going to input test screen in %d...\n", i); \
-    sleep(0x17FFFF); \
+    sleep(0x17FFFFFF); \
 } do{}while(0)
 
+static _Bool are_interrupts_enabled(void) {
+    unsigned long flags;
+    __asm__ __volatile__("pushf\t\n"
+            "pop %0\t\n"
+            : "=g" (flags) );
+    return flags & (1 << 9);
+}
 
 int init_kernel(void);
 int init_kernel(void) {
-
+    __asm__ __volatile__(".code64\t\n");
     /*
      * If you ever run into
-     * weird space-dependant
+     * weird space-dependent
      * issues when printing too much
      * or using too many functions,
      * try reading more from the disk.
      * this is in bootloader.asm,
      * and it's the value moved into dh.
      */
+    init_vga(WHITE, BLACK);
+    reset_video_memory();
 
-    /* FPU works, but the printk format has not been
-     * implemented yet. User input has been broken because
-     * of IDT enabling. You can get it back by commenting out
-     * the "sti" instruction in idt.c. */
-
+    cpuflags();
+    /* init PIC */
+    //PIC_remap(0x11);
+    //PIC_remap(0x20);
+    //PIC_remap(0x08);
+    idt_init();
+    disable_interrupts();
+	test_memory();
+    /* IRQs are now set and remapped.
+     * IRQ_0x1 == ISR_0x21 */
+    /* masking IRQ 1 will allow
+     * keyboard input the "old" way
+     * until proper interrupt handling
+     * can be added for it. */
+    //IRQ_set_mask(1);
     /*
      * if running text mode,
      * only use "vga"-named
@@ -55,11 +73,10 @@ int init_kernel(void) {
     //init_pixel_vga(GREEN);
     //test_vga_color();
     //reset_pixel_memory();
-    init_vga(WHITE, BLUE);
-    reset_video_memory();
 
 
-    TRANSITION(2);
+    //test_fpu(16, 3);
+    TRANSITION(5);
 
 
     init_vga(WHITE, BRIGHT_MAGENTA);
@@ -75,9 +92,8 @@ int init_kernel(void) {
     printk("Welcome to 64-bit long mode!\n");
     printk("All of this was printed from the kernel!\n");
 
-    idt_init();
 
-    TRANSITION(2);
+    TRANSITION(5);
     init_vga(BRIGHT_GREEN, BLACK);
     reset_video_memory();
     printk("Format test:\n"
@@ -92,7 +108,8 @@ int init_kernel(void) {
             "%%lu: %lu\n"
             "%%x: %x\n"
             "%%o: %o\n"
-            "%%b: %b\n",
+            "%%b: %b\n"
+            "%%f: %f\n",
             'b',
             "string",
             -12,
@@ -104,12 +121,13 @@ int init_kernel(void) {
             17,
             256,
             4096,
-            7897890);
+            7897890,
+            355./113);
+    enable_interrupts();
 
 
+    //relics_shell("> ");
 
-    cpuflags();
-    test_fpu(16, 3);
 
     return 0;
 

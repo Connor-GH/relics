@@ -1,6 +1,20 @@
 #ifndef CPU_H
 #define CPU_H
 #include <inttypes.h>
+typedef struct cpu_features_struct {
+    _Bool fpu;
+    _Bool cpuid;
+    _Bool mmx;
+    _Bool sse;
+    _Bool sse2;
+    _Bool ssse3;
+    _Bool sse4_1;
+    _Bool sse4_2;
+    _Bool avx;
+    _Bool avx2;
+    _Bool avx512;
+} cpu_features_struct;
+extern cpu_features_struct cpu_features;
 void __attribute__((noreturn)) halt(void);
 void cpuid_call(u32 id, u32 cnt, u32 *a, u32 *b, u32 *c, u32 *d);
 void cpuflags(void);

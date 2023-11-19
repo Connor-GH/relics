@@ -1,9 +1,5 @@
-#include <kio.h>
+#include <kio-realmode.h>
 #include <memory.h>
-#ifdef KERNEL_LOG
-#include <irq.h>
-#include <cpu.h>
-#endif
 
 static uint16_t *vga_buffer;
 
@@ -15,14 +11,10 @@ static uint8_t g_fore_color = WHITE, g_back_color = BLACK;
 #define VGA_LENGTH 25
 #define VGA_WIDTH 80
 #define KIO_TABSIZE 4
-union double_int64_convert {
-    double d;
-    uint64_t i;
-};
 
-
+#if 0
 /* https://wiki.osdev.org/Text_Mode_Cursor */
-static void update_cursor(int x, int y) {
+static void realmode_update_cursor(int x, int y) {
     /* y is next_line_index */
     /* x is vga_index % 80 */
 	uint16_t pos = y * VGA_WIDTH + x;
@@ -48,9 +40,9 @@ void disable_cursor(void) {
     outb(0x3D5, 0x20);
 }
 
+#endif
 
-
-static uint16_t vga_entry(unsigned char ch, uint8_t fore_color, uint8_t back_color) {
+static uint16_t realmode_vga_entry(unsigned char ch, uint8_t fore_color, uint8_t back_color) {
 
     uint16_t ax = 0;
     uint8_t ah = 0, al = 0;
@@ -67,16 +59,16 @@ static uint16_t vga_entry(unsigned char ch, uint8_t fore_color, uint8_t back_col
 }
 
 // clear video buffer array
-static void clear_vga_buffer(uint16_t **buffer, uint8_t fore_color, uint8_t back_color) {
+static void realmode_clear_vga_buffer(uint16_t **buffer, uint8_t fore_color, uint8_t back_color) {
     for(int y = 0; y < VGA_LENGTH; y++) {
         for(int x = 0; x < VGA_WIDTH; x++) {
-            (*buffer)[y * VGA_WIDTH + x] = vga_entry(0, fore_color, back_color);
+            (*buffer)[y * VGA_WIDTH + x] = realmode_vga_entry(0, fore_color, back_color);
         }
     }
 }
-void reset_video_memory(void) {
+void realmode_reset_video_memory(void) {
     vga_buffer = (uint16_t *)0xB8000;
-    clear_vga_buffer(&vga_buffer, g_fore_color, g_back_color);
+    realmode_clear_vga_buffer(&vga_buffer, g_fore_color, g_back_color);
     vga_index = 0;
     next_line_index = 1;
 }
@@ -88,17 +80,17 @@ static void scroll_vga_buffer(uint16_t **buffer, uint8_t fore_color, uint8_t bac
         }
     }
     for (int x = 0; x < VGA_WIDTH; x++) {
-        (*buffer)[(VGA_LENGTH-1) * VGA_WIDTH + x] = vga_entry(0, fore_color, back_color);
+        (*buffer)[(VGA_LENGTH-1) * VGA_WIDTH + x] = realmode_vga_entry(0, fore_color, back_color);
     }
     vga_index = (VGA_LENGTH-1) * VGA_WIDTH;
 }
 
 //initialize vga buffer
-void init_vga(uint8_t fore_color, uint8_t back_color) {
+void realmode_init_vga(uint8_t fore_color, uint8_t back_color) {
     g_fore_color = fore_color;
     g_back_color = back_color;
     vga_buffer = (uint16_t*)VIDEO_MEMORY;  //point vga_buffer pointer to VIDEO_MEMORY
-    clear_vga_buffer(&vga_buffer, fore_color, back_color);  //clear buffer
+    realmode_clear_vga_buffer(&vga_buffer, fore_color, back_color);  //clear buffer
 }
 
 
@@ -112,10 +104,11 @@ static void print_new_line(void) {
     if(next_line_index >= VGA_LENGTH) {
         scroll_vga_buffer(&vga_buffer, g_fore_color, g_back_color);
     } else {
+
         vga_index = VGA_WIDTH*next_line_index;
         next_line_index++;
+        //update_cursor(vga_index % VGA_WIDTH, next_line_index-1);
     }
-    update_cursor(vga_index % VGA_WIDTH, next_line_index-1);
 }
 
 //assign ascii character to video buffer
@@ -125,11 +118,11 @@ static void print_char(const unsigned char ch) {
         print_new_line();
     } else if (ch == '\t') {
         vga_index += KIO_TABSIZE;
-        update_cursor(vga_index % VGA_WIDTH, next_line_index-1);
+        //update_cursor(vga_index % VGA_WIDTH, next_line_index-1);
     } else {
-        vga_buffer[vga_index] = vga_entry(ch, g_fore_color, g_back_color);
+        vga_buffer[vga_index] = realmode_vga_entry(ch, g_fore_color, g_back_color);
         vga_index++;
-        update_cursor(vga_index % VGA_WIDTH, next_line_index-1);
+        //update_cursor(vga_index % VGA_WIDTH, next_line_index-1);
     }
 }
 static int putchark(int c) {
@@ -138,7 +131,7 @@ static int putchark(int c) {
     else print_char((unsigned char)c);
 }
 
-static uint32_t digit_count(int64_t num) {
+static uint32_t digit_count(int32_t num) {
 
     uint32_t count = 0;
     if (num == 0) return 1;
@@ -152,7 +145,7 @@ static uint32_t digit_count(int64_t num) {
     }
     return count;
 }
-static uint32_t digit_count_unsigned(uint64_t num) {
+static uint32_t digit_count_unsigned(uint32_t num) {
 
     uint32_t count = 0;
     if (num == 0) return 1;
@@ -163,7 +156,7 @@ static uint32_t digit_count_unsigned(uint64_t num) {
     return count;
 }
 
-static void lltoa(long long num, char *number) {
+static void itoa(int num, char *number) {
 
     unsigned int dgcount = digit_count(num);
     unsigned int index = dgcount - 1;
@@ -187,10 +180,10 @@ getnum:
         number[dgcount] = '\0';
     }
 }
-static void ulltoa(unsigned long long num, char *number) {
+static void uitoa(unsigned int num, char *number) {
 
-    unsigned long long dgcount = digit_count_unsigned(num);
-    unsigned long long index = dgcount - 1;
+    unsigned int dgcount = digit_count_unsigned(num);
+    unsigned int index = dgcount - 1;
     char x;
     if(num == 0 && dgcount == 1) {
 
@@ -218,39 +211,15 @@ static void print_string(const unsigned char *str) {
 
 // Print int by converting it into string
 // and then printing the string.
-static void print_long_long(long long num) {
-    char str_num[digit_count(num)+1];
-    lltoa(num, str_num);
-    print_string(str_num);
-}
-static void print_long(long num) {
-    print_long_long((long long)num);
-}
 static void print_int(int num) {
-    print_long((long)num);
-}
-static void print_unsigned_long_long(unsigned long long num) {
-    char str_num[digit_count_unsigned(num)+1];
-    ulltoa(num, str_num);
+    char str_num[digit_count(num)+1];
+    itoa(num, str_num);
     print_string(str_num);
-}
-static void print_unsigned_long(unsigned long num) {
-    print_unsigned_long_long((unsigned long long)num);
 }
 static void print_unsigned_int(unsigned int num) {
-    print_unsigned_long((unsigned long)num);
-}
-static void print_double(double num) {
-    /* Print the num before the decimal point. */
-    print_unsigned_long((uint64_t)num);
-    print_char('.');
-    /* Get only the numbers after the decimal point and print those. */
-    /* The amount of digits after the decimal point will be adjustable
-     * in the future, when printk is complete. */
-    if (((num - (uint64_t)num) * 1000000) == 0)
-        print_string("00000");
-    else
-        print_unsigned_long((num - (uint64_t)num) * 1000000);
+    char str_num[digit_count_unsigned(num)+1];
+    uitoa(num, str_num);
+    print_string(str_num);
 }
 
 static void decimal_to_base(unsigned int n, int base) {
@@ -274,7 +243,7 @@ static void decimal_to_base(unsigned int n, int base) {
 #define va_list __builtin_va_list
 #define va_arg __builtin_va_arg
 /* what works:
- * %c, %i, %d, %%, %u, %s, %lu, %ld, %lld, %llu, %b, %o, %x.
+ * %c, %i, %d, %%, %u, %s, %b, %o, %x.
  *
  * No zero extension, no "alternative form", etc.
  *
@@ -290,41 +259,6 @@ static void _print(const char *format, va_list *argp) {
                           int d = va_arg(*argp, int);
                           print_int(d);
                           break;
-                      }
-            case 'l': {
-                          format++;
-                          if (!*format) break;
-                          switch (*format) {
-                          case 'l': {
-                                    format++;
-                                    if (!*format) break;
-                                    if (*format == 'u') {
-                                        unsigned long long llu = va_arg(*argp, unsigned long long);
-                                        print_unsigned_long_long(llu);
-                                    } else if (*format == 'd') {
-                                        long long lld = va_arg(*argp, long long);
-                                        print_long_long(lld);
-                                    } else {
-                                        format--;
-                                    }
-                                    break;
-                                    }
-                          case 'u': {
-                                    unsigned long lu = va_arg(*argp, long unsigned);
-                                    print_unsigned_long(lu);
-                                    break;
-                                    }
-                          case 'd': {
-                                    long ld = va_arg(*argp, long);
-                                    print_long(ld);
-                                    break;
-                                    }
-                            default:  {
-                                      format--;
-                                      break;
-                                      }
-                          }
-                        break;
                       }
             case 'u': {
                           unsigned int u = va_arg(*argp, unsigned int);
@@ -377,14 +311,6 @@ static void _print(const char *format, va_list *argp) {
                           print_string(s);
                           break;
                       }
-            case 'f': {
-                          /* must be double due to
-                           * va_arg's promotion model */
-                          double f = va_arg(*argp, double);
-                          print_double(f);
-                          break;
-                      }
-
             default: {
                          format--;
                          break;
@@ -398,24 +324,9 @@ static void _print(const char *format, va_list *argp) {
 }
 #define va_start __builtin_va_start
 #define va_end __builtin_va_end
-void printk(const char *restrict format, ...) {
+void realmode_printk(const char *restrict format, ...) {
     va_list listp;
     va_start(listp, format);
     _print(format, &listp);
     va_end(listp);
-}
-
-
-
-void log_printk(const char *restrict format, ...) {
-#ifdef KERNEL_LOG
-    va_list listp;
-    va_start(listp, format);
-    if (cpu_features.sse == 1)
-        printk("[%f] ", PIT_IRQ_timer_get_current_time_since_boot());
-    else
-        printk("[0.00000] ");
-    _print(format, &listp);
-    va_end(listp);
-#endif
 }

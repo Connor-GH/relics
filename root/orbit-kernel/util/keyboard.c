@@ -41,17 +41,12 @@ static void wait_for_io(uint32_t timer_count) {
         if(timer_count <= 0) break;
     }
 }
-void sleep(uint32_t timer_count) {
-    /* this `sleep' should be
-     * replaced with the RTC clock */
-    wait_for_io(timer_count);
-}
 
 void test_input(void) {
 
     char ch = 0;
     char keycode = 0;
-    sleep(0x2FFFFFF);
+    wait_for_io(0x2FFFFFF);
 
     do {
         keycode = get_input_keycode();
@@ -62,7 +57,7 @@ void test_input(void) {
             ch = get_ascii_char(keycode);
             printk("%c", ch);
         }
-        sleep(0x2FFFFFF);
+        wait_for_io(0x2FFFFFF);
 
 
     } while (ch > 0);
