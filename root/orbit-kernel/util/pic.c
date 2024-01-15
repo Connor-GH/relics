@@ -18,17 +18,11 @@ void PIC_enable(void) {
         IRQ_clear_mask(irq);
 }
 void PIC_disable(void) {
-    PIC_remap(0x20);
-    for (uint8_t irq = 0; irq < 16; irq++)
-        IRQ_set_mask(irq);
-}
-
-/* EOI is very common for interrupt controllers. */
-void PIC_send_eoi(uint8_t irq) {
-    if (irq >= 8)
-        outb(PIC2_CMD, PIC_EOI);
-
-    outb(PIC1_CMD, PIC_EOI);
+    //PIC_remap(0x20);
+    //for (uint8_t irq = 0; irq < 16; irq++)
+     //   IRQ_set_mask(irq);
+	 outb(PIC1_DATA, 0xff);
+	 outb(PIC2_DATA, 0xff);
 }
 
 /* offset1 - vector offset for primary PIC */

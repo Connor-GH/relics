@@ -44,14 +44,14 @@ int init_kernel(void) {
      */
     init_vga(WHITE, BLACK);
     reset_video_memory();
-
-    cpuflags();
+  //  cpuflags();
     /* init PIC */
-    //PIC_remap(0x11);
-    //PIC_remap(0x20);
-    //PIC_remap(0x08);
     idt_init();
+	enable_interrupts();
+	IRQ_set_mask(0);
     disable_interrupts();
+//	__asm__ __volatile__("hlt");
+#if 0
 	test_memory();
     /* IRQs are now set and remapped.
      * IRQ_0x1 == ISR_0x21 */
@@ -76,7 +76,8 @@ int init_kernel(void) {
 
 
     //test_fpu(16, 3);
-    TRANSITION(5);
+#endif
+    TRANSITION(1);
 
 
     init_vga(WHITE, BRIGHT_MAGENTA);
@@ -92,11 +93,13 @@ int init_kernel(void) {
     printk("Welcome to 64-bit long mode!\n");
     printk("All of this was printed from the kernel!\n");
 
+	enable_interrupts();
 
-    TRANSITION(5);
+
+    TRANSITION(1);
     init_vga(BRIGHT_GREEN, BLACK);
     reset_video_memory();
-    printk("Format test:\n"
+	printk("Format test:\n"
             "%%c: %c\n"
             "%%s: %s\n"
             "%%d: %d\n"
@@ -108,8 +111,8 @@ int init_kernel(void) {
             "%%lu: %lu\n"
             "%%x: %x\n"
             "%%o: %o\n"
-            "%%b: %b\n"
-            "%%f: %f\n",
+            "%%b: %b\n",
+            //"%%f: %f\n",
             'b',
             "string",
             -12,
@@ -121,11 +124,15 @@ int init_kernel(void) {
             17,
             256,
             4096,
-            7897890,
-            355./113);
-    enable_interrupts();
+            7897890);//,
+            //355./113);
 
 
+	for (;;) {
+	//	__asm__ __volatile__("int $0x21");
+
+		__asm__ __volatile__("hlt");
+	}
     //relics_shell("> ");
 
 

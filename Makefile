@@ -24,7 +24,8 @@ OBJECTS_REALMODE := $(SOURCES_REALMODE:$(KERNELDIR)/16bit/%.c=$(BIN)/%.o)
 OBJECTS_32BIT := $(SOURCES_32BIT:$(KERNELDIR)/32bit/%.c=$(BIN)/%.o)
 OBJECTS_LIBOS := $(SOURCES_LIBOS:$(LIBOSDIR)/apps/%.c=$(BIN)/%.o)
 OS_CFLAGS = -std=$(STD) -O0 -march=x86-64 \
-			-pipe -nostdlib -ffreestanding -DVERSION=\"$(KERNEL_VERSION)\" $(CFLAGS)
+			-pipe -nostdlib -ffreestanding -DVERSION=\"$(KERNEL_VERSION)\" $(CFLAGS) \
+			-g3
 REALMODE_CFLAGS = $(OS_CFLAGS)
 LIBOS_CFLAGS = $(OS_CFLAGS) -D__userland  $(LIBOS_IVARS) $(EXTRA_LIBOS_CFLAGS)
 OS_CFLAGS += \
@@ -39,6 +40,12 @@ ifeq ($(FEATURE_FLAGS),sse)
 endif
 ifeq ($(FEATURE_FLAGS),avx)
 	OS_CFLAGS += -msse -mavx
+endif
+ifeq ($(FEATURE_FLAGS),)
+$(error Please set $$FEATURE_FLAGS env var to either sse or avx)
+endif
+ifeq ($(FEATURE_FLAGS),none)
+
 endif
 
 ifeq ($(CC), clang)
@@ -88,6 +95,7 @@ ifeq ($(QEMU), debug)
 else
 	QEMU_RUN = qemu-system-x86_64 -monitor stdio -drive format=raw,file="$(BIN)/OS.bin",index=0,if=floppy,  -m 4G
 endif
+QEMU_RUN += $(QEMU_FLAGS)
 
 WFLAGS = -Wall -Wextra -Wpedantic \
          -Wshadow -Wvla -Wpointer-arith -Wwrite-strings -Wfloat-equal \
@@ -108,15 +116,15 @@ build:
 	$(MAKE) kernel
 	$(MAKE) $(OBJECTS_UTIL)
 	$(MAKE) $(OBJECTS_32BIT)
-	$(MAKE) $(OBJECTS_REALMODE)
+	# $(MAKE) $(OBJECTS_REALMODE)
 	$(MAKE) $(OBJECTS_LIBOS)
 	$(MAKE) together
 
 boot:
 	as --64 $(KERNELDIR)/asm/bootloader.asm -o $(BIN)/boot.o --mx86-used-note=no
-	as --64 $(KERNELDIR)/asm/kernel_entry.asm -o $(BIN)/kernel_entry.o
-	as $(KERNELDIR)/util/isr.asm -o $(BIN)/isr.o
-	as $(KERNELDIR)/util/idt.asm -o $(BIN)/idt-asm.o
+	as --64 $(KERNELDIR)/asm/kernel_entry.asm -o $(BIN)/kernel_entry.o --mx86-used-note=no
+	as $(KERNELDIR)/util/isr.asm -o $(BIN)/isr.o --mx86-used-note=no
+	as $(KERNELDIR)/util/idt.asm -o $(BIN)/idt-asm.o --mx86-used-note=no
 	head -c 10240K < /dev/zero > $(BIN)/zeroes.bin
 
 kernel:
@@ -129,9 +137,9 @@ $(OBJECTS_UTIL): $(BIN)/%.o : $(KERNELDIR)/util/%.c
 $(OBJECTS_32BIT): $(BIN)/%.o : $(KERNELDIR)/32bit/%.c
 	$(CC) $(OS_CFLAGS) $(WFLAGS) $(WEXTRA) -c $< -o $@
 
-$(OBJECTS_REALMODE): $(BIN)/%.o : $(KERNELDIR)/16bit/%.c
-	$(CC) $(REALMODE_CFLAGS) $(WFLAGS) $(WEXTRA) -c $< -o $@
-	$(PREFIX)objcopy -O elf64-x86-64 -I elf32-x86-64 $@ $@
+#$(OBJECTS_REALMODE): $(BIN)/%.o : $(KERNELDIR)/16bit/%.c
+#	$(CC) $(REALMODE_CFLAGS) $(WFLAGS) $(WEXTRA) -c $< -o $@
+#	$(PREFIX)objcopy -O elf64-x86-64 -I elf32-x86-64 $@ $@
 
 $(OBJECTS_LIBOS): $(BIN)/%.o : $(LIBOSDIR)/apps/%.c
 	$(CC) $(LIBOS_CFLAGS) $(WFLAGS) $(WEXTRA) -c $< -o $@
@@ -142,9 +150,11 @@ together:
 		--oformat binary -e start -melf_x86_64 -ffreestanding -shared -Ttext 0x7c00
 	$(LD) $(OS_LDFLAGS) -o $(BIN)/full_kernel.bin -Ttext 0x1000 \
 	$(BIN)/kernel_entry.o $(BIN)/kernel.o $(BIN)/isr.o $(BIN)/idt-asm.o \
-		$(OBJECTS_UTIL) $(OBJECTS_32BIT) $(OBJECTS_LIBOS) $(OBJECTS_REALMODE) --oformat binary
+		$(OBJECTS_UTIL) $(OBJECTS_32BIT) $(OBJECTS_LIBOS) --oformat binary
+	#$(OBJECTS_REALMODE)
 	@cat $(BIN)/boot.bin $(BIN)/full_kernel.bin $(BIN)/zeroes.bin > $(BIN)/OS.bin
 
 run:
 	$(QEMU_RUN)
+
 

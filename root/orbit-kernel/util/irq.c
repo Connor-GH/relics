@@ -8,6 +8,6 @@
  * - IRQs
  * - SSE values for doubles working properly
  */
-double PIT_IRQ_timer_get_current_time_since_boot(void) {
-    return 0.0;
+int PIT_IRQ_timer_get_current_time_since_boot(void) {
+    return 0;
 }

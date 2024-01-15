@@ -240,6 +240,7 @@ static void print_unsigned_long(unsigned long num) {
 static void print_unsigned_int(unsigned int num) {
     print_unsigned_long((unsigned long)num);
 }
+#ifdef __SSE_enabled
 static void print_double(double num) {
     /* Print the num before the decimal point. */
     print_unsigned_long((uint64_t)num);
@@ -252,6 +253,7 @@ static void print_double(double num) {
     else
         print_unsigned_long((num - (uint64_t)num) * 1000000);
 }
+#endif
 
 static void decimal_to_base(unsigned int n, int base) {
         const char digits[17] = "0123456789abcdef";
@@ -377,6 +379,7 @@ static void _print(const char *format, va_list *argp) {
                           print_string(s);
                           break;
                       }
+#ifdef __SSE_enabled
             case 'f': {
                           /* must be double due to
                            * va_arg's promotion model */
@@ -384,6 +387,7 @@ static void _print(const char *format, va_list *argp) {
                           print_double(f);
                           break;
                       }
+#endif
 
             default: {
                          format--;

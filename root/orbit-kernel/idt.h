@@ -37,13 +37,13 @@ typedef struct __attribute__((packed)) {
 //        uint32_t interrupt,
 //        __attribute__((unused)) struct stack_state stack);
 
-__attribute__((interrupt))
+__attribute__((no_caller_saved_registers))
 void exception_handler(regs_t *r);
 
 void set_gdt_offset(long offset);
 
-//void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags);
-void idt_set_descriptor(uint8_t vector, /*void **/uintptr_t isr, uint8_t flags,
+//void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags, uint8_t ist);
+void idt_set_descriptor(uint8_t vector, uintptr_t isr, uint8_t flags,
         uint8_t ist);
 void idt_init(void);
 
@@ -67,5 +67,6 @@ typedef void (*interrupt_handler_t)(void);
 void __attribute__((no_caller_saved_registers)) kbd_irq_handler(regs_t *r);
 void enable_interrupts(void);
 void disable_interrupts(void);
+void irq_install_keyboard(void);
 
 #endif /* IDT_H */

@@ -37,11 +37,12 @@
     pop rax
 .endm
 
+.extern exception_handler_2
 
 .macro isr_err_stub num
 .global isr_stub_\num\()
 isr_stub_\num\():
-    push \num\()
+	push \num\()
     #call exception_handler
     jmp isr_common_stub
     #iretq
@@ -49,7 +50,7 @@ isr_stub_\num\():
 .macro isr_no_err_stub num
 .global isr_stub_\num\()
 isr_stub_\num\():
-    push 0
+	push 0
     push \num\()
     #call exception_handler
     jmp isr_common_stub
@@ -59,9 +60,11 @@ isr_stub_\num\():
 .macro IRQ num1, num2
 .global irq\num1\()
 irq\num1\():
-    push 0
-    push \num2\()
-    jmp isr_common_stub
+ 	push 0
+	push \num2\()
+	#call exception_handler
+	jmp isr_common_stub
+	#iretq
 .endm
 
 /*.macro def_syscall num
@@ -72,9 +75,6 @@ isr_stub_\num\():
 .endm*/
 
 
-/* The first 32 IRQs are
- * mandated by Intel to
- * be reserved. */
 isr_no_err_stub 0
 isr_no_err_stub 1
 isr_no_err_stub 2
@@ -106,8 +106,9 @@ isr_no_err_stub 27
 isr_no_err_stub 28
 isr_no_err_stub 29
 isr_err_stub    30
-isr_no_err_stub 31
-isr_no_err_stub 128 /* syscall */
+isr_no_err_stub 31 #
+# isr_no_err_stub 128 /* syscall */
+
 
 IRQ 0, 32
 IRQ 1, 33
@@ -155,31 +156,36 @@ error_common:
 
 .macro insert_isr num
 .section .data
-    .long isr_stub_\num
+    .quad isr_stub_\num
+.endm
+.macro insert_irq num
+.section .data
+    .quad irq\num
 .endm
 
 .section .data
 isr_stub_table:
 .set i,0
-.rept 32
+.rept 31
     insert_isr %i
     .set i, i+1
 .endr
 
 
 # IRQs
-/*.set i, 32
-.rept 16
-    insert_isr %i
+irq_table:
+.set i, 0
+.rept 15
+    insert_irq %i
     .set i, i+1
-.endr*/
+.endr
 
 .extern exception_handler
 isr_common_stub:
     _pushaq
     mov rdi, rsp
-    cli
+    #cli
     call exception_handler
     _popaq
-    add rsp, 16
+    add rsp, 8
     iretq

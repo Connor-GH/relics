@@ -1,1 +1,1 @@
-objdump -D -b binary -m i386 --no-addresses --no-show-raw-insn -Mintel Binaries/OS.bin  | less
+objdump -D -b binary -m i386 --no-show-raw-insn -Mintel bin/OS.bin  | less

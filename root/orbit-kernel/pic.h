@@ -34,6 +34,8 @@
 #define PIC_READ_IRR                0x0a    /* OCW3 irq ready next CMD read */
 #define PIC_READ_ISR                0x0b    /* OCW3 irq service next CMD read */
 
+void PIC_enable(void);
+void PIC_disable(void);
 void PIC_send_eoi(uint8_t irq);
 void PIC_remap(int32_t offset);
 void PIC_acknowledge(uint32_t interrupt);
