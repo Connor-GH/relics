@@ -8,6 +8,7 @@
 #define __NEED_size_t
 #define __NEED_wchar_t
 
-#define offsetof(type, member-designator) ((size_t)((char *) &( ((type *)0)->member-designator) - (char *)0 ) )
+#define offsetof(type, member - designator) \
+	((size_t)((char *)&(((type *)0)->member - designator) - (char *)0))
 
 #endif /* _STDDEF_H */

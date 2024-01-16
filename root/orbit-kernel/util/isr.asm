@@ -42,6 +42,7 @@
 .macro isr_err_stub num
 .global isr_stub_\num\()
 isr_stub_\num\():
+	cli
 	push \num\()
     #call exception_handler
     jmp isr_common_stub
@@ -50,6 +51,7 @@ isr_stub_\num\():
 .macro isr_no_err_stub num
 .global isr_stub_\num\()
 isr_stub_\num\():
+	cli
 	push 0
     push \num\()
     #call exception_handler
@@ -57,14 +59,15 @@ isr_stub_\num\():
     #iretq
 .endm
 
+#.extern irq_handlers
 .macro IRQ num1, num2
 .global irq\num1\()
 irq\num1\():
- 	push 0
+ 	cli
+	push 0
 	push \num2\()
-	#call exception_handler
-	jmp isr_common_stub
-	#iretq
+	# call exception_handler
+	jmp irq_common_stub
 .endm
 
 /*.macro def_syscall num
@@ -166,7 +169,7 @@ error_common:
 .section .data
 isr_stub_table:
 .set i,0
-.rept 31
+.rept 32
     insert_isr %i
     .set i, i+1
 .endr
@@ -175,7 +178,7 @@ isr_stub_table:
 # IRQs
 irq_table:
 .set i, 0
-.rept 15
+.rept 16
     insert_irq %i
     .set i, i+1
 .endr
@@ -184,8 +187,35 @@ irq_table:
 isr_common_stub:
     _pushaq
     mov rdi, rsp
-    #cli
     call exception_handler
     _popaq
-    add rsp, 8
+    add rsp, 16 # because of the previous pops
     iretq
+
+irq_common_stub:
+	_pushaq
+	mov ax, ds
+	push rax
+
+	mov ax, 0x10
+	mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+	push r15
+	lea r15, [irq_handlers]
+	mov r15, [r15 + 1 * 8]
+    call r15
+	pop r15
+    pop rbx        # reload the original data segment descriptor
+    mov ds, bx
+    mov es, bx
+    mov fs, bx
+    mov gs, bx
+
+    _popaq # Pops edi,esi,ebp..
+
+    add rsp, 16 #Cleans up the pushed error code and pushed ISR number
+    sti
+    iretq # pops 5 things at once: CS, RIP, RFLAGS, SS, and RSP

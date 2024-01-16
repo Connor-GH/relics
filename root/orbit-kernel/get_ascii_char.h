@@ -6,4 +6,3 @@
 
 extern char get_ascii_char(uint8_t);
 #endif /* GET_ASCII_CHAR_H */
-

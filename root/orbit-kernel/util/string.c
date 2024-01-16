@@ -7,11 +7,13 @@
  * int's max size, but this is architecture
  * dependent.
  */
-uint32_t strlen(const char *s) {
-    uint32_t length = 0;
-    while(s[length])
-        length++;
-    return length;
+uint32_t
+strlen(const char *s)
+{
+	uint32_t length = 0;
+	while (s[length])
+		length++;
+	return length;
 }
 /*
  * strcmp() and strncmp():
@@ -21,50 +23,55 @@ uint32_t strlen(const char *s) {
  * checking every array element in regards to
  * s1 is no issue.
  */
-int strcmp(const char *s1, const char *s2) {
-    for (size_t i = 0; i < strlen(s1); i++) {
-        if (s1[i] - s2[i] == 0)
-            continue;
-        return s1[i] - s2[i];
-    }
-    return 0;
-}
-
-int strncmp(const char *s1, const char *s2, size_t n) {
-
-    for (size_t i = 0; i < n; i++) {
-        if (s1[i] == s2[i])
-            continue;
-        return s1[i] - s2[i];
-    }
-    return 0;
-}
-
-
-void *memcpy(void *dest, void *src, size_t n)
+int
+strcmp(const char *s1, const char *s2)
 {
-    for (size_t i = 0; i < n; i++)
-    {
-        ((char *)dest)[i] = ((char *)src)[i];
-    }
-    return (void *)dest;
+	for (size_t i = 0; i < strlen(s1); i++) {
+		if (s1[i] - s2[i] == 0)
+			continue;
+		return s1[i] - s2[i];
+	}
+	return 0;
 }
 
-char *strcpy(char *dest, const char *src) {
-    size_t i;
-    for (i = 0; src[i] != '\0'; i++)
-        dest[i] = src[i];
-
-    return dest;
+int
+strncmp(const char *s1, const char *s2, size_t n)
+{
+	for (size_t i = 0; i < n; i++) {
+		if (s1[i] == s2[i])
+			continue;
+		return s1[i] - s2[i];
+	}
+	return 0;
 }
 
+void *
+memcpy(void *dest, void *src, size_t n)
+{
+	for (size_t i = 0; i < n; i++) {
+		((char *)dest)[i] = ((char *)src)[i];
+	}
+	return (void *)dest;
+}
 
-char *kernel_strncpy(char *dest, const char *src, size_t n) {
-    size_t i;
-    for (i = 0; i < n && src[i] != '\0'; i++)
-        dest[i] = src[i];
-    for (; i < n; i++)
-        dest[i] = '\0';
+char *
+strcpy(char *dest, const char *src)
+{
+	size_t i;
+	for (i = 0; src[i] != '\0'; i++)
+		dest[i] = src[i];
 
-    return dest;
+	return dest;
+}
+
+char *
+kernel_strncpy(char *dest, const char *src, size_t n)
+{
+	size_t i;
+	for (i = 0; i < n && src[i] != '\0'; i++)
+		dest[i] = src[i];
+	for (; i < n; i++)
+		dest[i] = '\0';
+
+	return dest;
 }

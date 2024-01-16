@@ -1,7 +1,8 @@
 #ifndef __KERNEL_PANIC_H
 #define __KERNEL_PANIC_H
 
-void panic(int i);
+void
+panic(int i);
 
 #define CPU_ISSUE 0
 #define MEMORY_ISSUE 1

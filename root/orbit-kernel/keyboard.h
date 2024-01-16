@@ -3,8 +3,10 @@
 
 #include <typedefs.h>
 #include <port_functions.h>
-char get_input_keycode(void);
-void test_input(void);
+char
+get_input_keycode(void);
+void
+test_input(void);
 
 #define KEYBOARD_PORT 0x60
 
@@ -86,6 +88,5 @@ void test_input(void);
 #define KEY_SPACE 0x39
 #define KEY_TAB 0x0F
 #define KEY_UP 0x48
-
 
 #endif /* KEYBOARD_H */

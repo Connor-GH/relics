@@ -142,12 +142,14 @@ mov eax,0x00000100 # LME bit set
 xor edx,edx # other bits zero
 wrmsr
 
+lgdt [GDT64_PTR]
+
 # enable paging
 mov eax,cr0
 bts eax,31
 mov cr0,eax
 
-.set GDT_CS64_OFFSET, (GDT_CS64 - GDT)
+.set GDT_CS64_OFFSET, (.GDT_CS64 - GDT64)
 jmp GDT_CS64_OFFSET:long_mode # as with the protected mode switch, we jmp using the new code segm
 
 .code64
@@ -171,13 +173,22 @@ GDT:
 GDT_NULL: .quad 0 # required on some platforms, disallow use of segment 0
 GDT_BOOT_CS: .quad 0x00CF9A000000FFFF # same as DS but with executable set in access byte
 GDT_BOOT_DS: .quad 0x00CF92000000FFFF
-GDT_CS64:    .quad 0x00209A0000000000 # same as above but 64-bit
 GDT_END:
+
+GDT64:
+.GDT64_NULL: .quad 0
+.GDT_CS64: .quad 0x00209A0000000000 # same as above but 64-bit
+.GDT_DS64: .quad 158329674399744
+.GDT64_END:
+
+GDT64_PTR:
+.word .GDT64_END-GDT64-1
+.long GDT64
 
 .section .text
 .global ret_gdt_offset
 ret_gdt_offset:
-mov rax, GDT_CS64-GDT
+mov rax, GDT_CS64_OFFSET
 ret
 
 

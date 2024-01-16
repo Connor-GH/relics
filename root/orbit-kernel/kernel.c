@@ -12,28 +12,40 @@
 #include <idt.h>
 #include <pic.h>
 
-
-static void sleep(int x) { for (int i = 0; i < x; i++) { __asm__ __volatile__("nop");}}
-
-#define TRANSITION(x) \
-\
-for (int i = x; i > 0; i--) { \
-    printk("Going to input test screen in %d...\n", i); \
-    sleep(0x17FFFFFF); \
-} do{}while(0)
-
-static _Bool are_interrupts_enabled(void) {
-    unsigned long flags;
-    __asm__ __volatile__("pushf\t\n"
-            "pop %0\t\n"
-            : "=g" (flags) );
-    return flags & (1 << 9);
+static void
+sleep(int x)
+{
+	for (int i = 0; i < x; i++) {
+		__asm__ __volatile__("nop");
+	}
 }
 
-int init_kernel(void);
-int init_kernel(void) {
-    __asm__ __volatile__(".code64\t\n");
-    /*
+#define TRANSITION(x)                                       \
+                                                            \
+	for (int i = x; i > 0; i--) {                           \
+		printk("Going to input test screen in %d...\n", i); \
+		sleep(0x17FFFFFF);                                  \
+	}                                                       \
+	do {                                                    \
+	} while (0)
+
+static _Bool
+are_interrupts_enabled(void)
+{
+	unsigned long flags;
+	__asm__ __volatile__("pushf\t\n"
+						 "pop %0\t\n"
+						 : "=g"(flags));
+	return flags & (1 << 9);
+}
+
+int
+init_kernel(void);
+int
+init_kernel(void)
+{
+	__asm__ __volatile__(".code64\t\n");
+	/*
      * If you ever run into
      * weird space-dependent
      * issues when printing too much
@@ -42,14 +54,14 @@ int init_kernel(void) {
      * this is in bootloader.asm,
      * and it's the value moved into dh.
      */
-    init_vga(WHITE, BLACK);
-    reset_video_memory();
-  //  cpuflags();
-    /* init PIC */
-    idt_init();
+	init_vga(WHITE, BLACK);
+	reset_video_memory();
+	//  cpuflags();
+	/* init PIC */
+	idt_init();
 	enable_interrupts();
 	IRQ_set_mask(0);
-    disable_interrupts();
+	disable_interrupts();
 //	__asm__ __volatile__("hlt");
 #if 0
 	test_memory();
@@ -77,66 +89,50 @@ int init_kernel(void) {
 
     //test_fpu(16, 3);
 #endif
-    TRANSITION(1);
+	TRANSITION(1);
 
+	init_vga(WHITE, BRIGHT_MAGENTA);
+	reset_video_memory();
 
-    init_vga(WHITE, BRIGHT_MAGENTA);
-    reset_video_memory();
-
-    printk("\n--[Relics version %s]--\n\n", VERSION);
-    printk("Raw Exokernel-LibraryOS Integrated Computing System\n");
-    printk("Relics can also be called 'Relix'.\n");
-    printk("\n");
-    printk("UNIX Once stood for \"Uniplexed Information [and] Computing System\",\n");
-    printk("and at some point the 'CS' got changed to an 'X'.\n");
-    printk("\n");
-    printk("Welcome to 64-bit long mode!\n");
-    printk("All of this was printed from the kernel!\n");
+	printk("\n--[Relics version %s]--\n\n", VERSION);
+	printk("Raw Exokernel-LibraryOS Integrated Computing System\n");
+	printk("Relics can also be called 'Relix'.\n");
+	printk("\n");
+	printk(
+		"UNIX Once stood for \"Uniplexed Information [and] Computing System\",\n");
+	printk("and at some point the 'CS' got changed to an 'X'.\n");
+	printk("\n");
+	printk("Welcome to 64-bit long mode!\n");
+	printk("All of this was printed from the kernel!\n");
 
 	enable_interrupts();
 
-
-    TRANSITION(1);
-    init_vga(BRIGHT_GREEN, BLACK);
-    reset_video_memory();
+	TRANSITION(1);
+	init_vga(BRIGHT_GREEN, BLACK);
+	reset_video_memory();
 	printk("Format test:\n"
-            "%%c: %c\n"
-            "%%s: %s\n"
-            "%%d: %d\n"
-            "%%i: %i\n"
-            "%%u: %u\n"
-            "%%lld: %lld\n"
-            "%%llu: %llu\n"
-            "%%ld: %ld\n"
-            "%%lu: %lu\n"
-            "%%x: %x\n"
-            "%%o: %o\n"
-            "%%b: %b\n",
-            //"%%f: %f\n",
-            'b',
-            "string",
-            -12,
-            45,
-            3147000000,
-            -9000000000000,
-            18000000000000,
-            23,
-            17,
-            256,
-            4096,
-            7897890);//,
-            //355./113);
-
+		   "%%c: %c\n"
+		   "%%s: %s\n"
+		   "%%d: %d\n"
+		   "%%i: %i\n"
+		   "%%u: %u\n"
+		   "%%lld: %lld\n"
+		   "%%llu: %llu\n"
+		   "%%ld: %ld\n"
+		   "%%lu: %lu\n"
+		   "%%x: %x\n"
+		   "%%o: %o\n"
+		   "%%b: %b\n",
+		   //"%%f: %f\n",
+		   'b', "string", -12, 45, 3147000000, -9000000000000, 18000000000000,
+		   23, 17, 256, 4096,
+		   7897890); //,
+	//355./113);
 
 	for (;;) {
-	//	__asm__ __volatile__("int $0x21");
-
 		__asm__ __volatile__("hlt");
 	}
-    //relics_shell("> ");
+	//relics_shell("> ");
 
-
-    return 0;
-
+	return 0;
 }
-

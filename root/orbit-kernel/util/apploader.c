@@ -9,9 +9,10 @@
  * we know the return address to make the jump.
  * The appcode is just a magic number that
  * indicates the pattern we search memory for. */
-__attribute__((noreturn))
-void load_app(char *looking_for, long *address) {
-    /* Commented out because "app" loading is a
+__attribute__((noreturn)) void
+load_app(char *looking_for, long *address)
+{
+	/* Commented out because "app" loading is a
      * work-in-progress and I'd rather save
      * peoples' eyes from burning due to compiler
      * warnings */
@@ -40,5 +41,4 @@ void load_app(char *looking_for, long *address) {
     /* return from function */
     __asm__ __volatile__("jmp *%0\t\n" : : "a" (&address));
 #endif
-
 }
