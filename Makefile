@@ -157,4 +157,5 @@ together:
 run:
 	$(QEMU_RUN)
 
-
+format:
+	@find . -iname *.h -o -iname *.c | xargs clang-format -style=file:.clang-format -i
