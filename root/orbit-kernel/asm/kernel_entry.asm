@@ -149,11 +149,14 @@ mov eax,cr0
 bts eax,31
 mov cr0,eax
 
-.set GDT_CS64_OFFSET, (.GDT_CS64 - GDT64)
+.set GDT_CS64_OFFSET, (GDT_CS64 - GDT64)
+.set GDT_DS64_OFFSET, (GDT_DS64 - GDT64)
+
 jmp GDT_CS64_OFFSET:long_mode # as with the protected mode switch, we jmp using the new code segm
 
 .code64
 long_mode:
+
 .extern init_kernel
 call init_kernel
 hlt
@@ -161,6 +164,7 @@ hlt
 hang:
 pause
 jmp hang
+
 
 .section .data
 .align 4
@@ -176,14 +180,14 @@ GDT_BOOT_DS: .quad 0x00CF92000000FFFF
 GDT_END:
 
 GDT64:
-.GDT64_NULL: .quad 0
-.GDT_CS64: .quad 0x00209A0000000000 # same as above but 64-bit
-.GDT_DS64: .quad 158329674399744
-.GDT64_END:
+GDT64_NULL: .quad 0
+GDT_CS64: .quad 0x00209A0000000000 # same as above but 64-bit
+GDT_DS64: .quad 158329674399744
+GDT64_END:
 
 GDT64_PTR:
-.word .GDT64_END-GDT64-1
-.long GDT64
+.word GDT64_END-GDT64-1 # limit
+.quad GDT64 # base
 
 .section .text
 .global ret_gdt_offset

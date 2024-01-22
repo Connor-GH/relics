@@ -37,25 +37,24 @@
     pop rax
 .endm
 
-.extern exception_handler_2
-
 .macro isr_err_stub num
 .global isr_stub_\num\()
 isr_stub_\num\():
-	cli
+	# cli
 	push \num\()
-    #call exception_handler
-    jmp isr_common_stub
-    #iretq
+    # call exception_handler
+    cld
+	jmp isr_common_stub
+	iretq
 .endm
 .macro isr_no_err_stub num
 .global isr_stub_\num\()
 isr_stub_\num\():
-	cli
 	push 0
     push \num\()
     #call exception_handler
-    jmp isr_common_stub
+    cld
+	jmp isr_common_stub
     #iretq
 .endm
 
@@ -63,7 +62,7 @@ isr_stub_\num\():
 .macro IRQ num1, num2
 .global irq\num1\()
 irq\num1\():
- 	cli
+	cld
 	push 0
 	push \num2\()
 	# call exception_handler
@@ -77,7 +76,7 @@ isr_stub_\num\():
     jmp syscall_common
 .endm*/
 
-
+.section .text
 isr_no_err_stub 0
 isr_no_err_stub 1
 isr_no_err_stub 2
@@ -110,25 +109,42 @@ isr_no_err_stub 28
 isr_no_err_stub 29
 isr_err_stub    30
 isr_no_err_stub 31 #
+isr_no_err_stub 32 #
+isr_no_err_stub 33 #
+isr_no_err_stub 34 #
+isr_no_err_stub 35 #
+isr_no_err_stub 36 #
+isr_no_err_stub 37 #
+isr_no_err_stub 38 #
+isr_no_err_stub 39 #
+isr_no_err_stub 40 #
+isr_no_err_stub 41 #
+isr_no_err_stub 42 #
+isr_no_err_stub 43 #
+isr_no_err_stub 44 #
+isr_no_err_stub 45 #
+isr_no_err_stub 46 #
+isr_no_err_stub 47 #
 # isr_no_err_stub 128 /* syscall */
 
-
-IRQ 0, 32
-IRQ 1, 33
-IRQ 2, 34
-IRQ 3, 35
-IRQ 4, 36
-IRQ 5, 37
-IRQ 6, 38
-IRQ 7, 39
-IRQ 8, 40
-IRQ 9, 41
-IRQ 10, 42
-IRQ 11, 43
-IRQ 12, 44
-IRQ 13, 45
-IRQ 14, 46
-IRQ 15, 47
+/*
+#IRQ 0, 32
+#IRQ 1, 33
+#IRQ 2, 34
+#IRQ 3, 35
+#IRQ 4, 36
+#IRQ 5, 37
+#IRQ 6, 38
+#IRQ 7, 39
+#IRQ 8, 40
+#IRQ 9, 41
+#IRQ 10, 42
+#IRQ 11, 43
+#IRQ 12, 44
+#IRQ 13, 45
+#IRQ 14, 46
+#IRQ 15, 47
+*/
 /*.set i,32
 .rept 16
     isr_no_err_stub %i
@@ -167,27 +183,34 @@ error_common:
 .endm
 
 .section .data
+.align 16
 isr_stub_table:
 .set i,0
-.rept 32
+.rept 47
     insert_isr %i
     .set i, i+1
 .endr
 
 
 # IRQs
+/*
 irq_table:
 .set i, 0
-.rept 16
+.rept 15
     insert_irq %i
     .set i, i+1
 .endr
+*/
 
 .extern exception_handler
+.section .text
+
 isr_common_stub:
     _pushaq
-    mov rdi, rsp
-    call exception_handler
+	mov rdi, rsp
+	cld
+	call exception_handler
+
     _popaq
     add rsp, 16 # because of the previous pops
     iretq
@@ -196,23 +219,19 @@ irq_common_stub:
 	_pushaq
 	mov ax, ds
 	push rax
-
 	mov ax, 0x10
 	mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
 
+	push rsp
 	push r15
 	lea r15, [irq_handlers]
 	mov r15, [r15 + 1 * 8]
     call r15
 	pop r15
-    pop rbx        # reload the original data segment descriptor
-    mov ds, bx
-    mov es, bx
-    mov fs, bx
-    mov gs, bx
+	pop rsp
 
     _popaq # Pops edi,esi,ebp..
 

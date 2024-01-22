@@ -6,7 +6,7 @@ idt_reload:
     mov rbp, rsp
     pushfq
     cli
-    lidt [rdi]
+    lidt [rdi] # first arg
     popfq
     pop rbp
     ret

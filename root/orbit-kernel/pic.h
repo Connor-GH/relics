@@ -38,11 +38,9 @@ PIC_enable(void);
 void
 PIC_disable(void);
 void
-PIC_send_eoi(uint8_t irq);
-void
 PIC_remap(int32_t offset);
 void
-PIC_acknowledge(uint32_t interrupt);
+PIC_acknowledge(uint8_t interrupt);
 uint16_t
 PIC_get_irr(void);
 uint16_t

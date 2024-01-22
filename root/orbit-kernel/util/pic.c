@@ -71,17 +71,16 @@ PIC_remap(int32_t offset)
 	log_printk("PIC remapped to %x\n", offset);
 }
 void
-PIC_acknowledge(unsigned int interrupt)
+PIC_acknowledge(uint8_t interrupt)
 {
 	if ((interrupt < PIC1_OFFSET) || (interrupt > PIC2_END)) {
 		return;
 	}
 
-	if (interrupt < PIC2_OFFSET) {
-		outb(PIC1_CMD, PIC_ACKNOWLEDGE);
-	} else {
+	if (interrupt >= 8) {
 		outb(PIC2_CMD, PIC_ACKNOWLEDGE);
 	}
+	outb(PIC1_CMD, PIC_ACKNOWLEDGE);
 }
 
 void

@@ -5,12 +5,14 @@
 #include <memory.h>
 #include <32bit/include/test_memory.h>
 #include <orbit-kernel/math.h>
+#include <asm/wrappers.h>
 #include <apploader.h>
 #include <libraryOSes/relics-libOS/apps/shell.h>
 #include <cpu.h>
 #include <vga.h>
 #include <idt.h>
 #include <pic.h>
+#include <gdt.h>
 
 static void
 sleep(int x)
@@ -58,10 +60,9 @@ init_kernel(void)
 	reset_video_memory();
 	//  cpuflags();
 	/* init PIC */
+	gdt_init();
 	idt_init();
-	enable_interrupts();
-	IRQ_set_mask(0);
-	disable_interrupts();
+
 //	__asm__ __volatile__("hlt");
 #if 0
 	test_memory();
@@ -88,7 +89,6 @@ init_kernel(void)
 
 
     //test_fpu(16, 3);
-#endif
 	TRANSITION(1);
 
 	init_vga(WHITE, BRIGHT_MAGENTA);
@@ -128,7 +128,17 @@ init_kernel(void)
 		   23, 17, 256, 4096,
 		   7897890); //,
 	//355./113);
+#endif
+	enable_interrupts();
+	IRQ_set_mask(0);
 
+	//ASM("int $0x0e\t\n");
+	//ASM("int $0x0e\t\n");
+	//ASM("int $0x0e\t\n");
+	volatile int a = 1;
+	volatile int b = 0;
+	//volatile int c = a / b;
+	//printk("%d\n", (volatile int)c);
 	for (;;) {
 		__asm__ __volatile__("hlt");
 	}

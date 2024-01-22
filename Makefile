@@ -123,8 +123,9 @@ build:
 boot:
 	as --64 $(KERNELDIR)/asm/bootloader.asm -o $(BIN)/boot.o --mx86-used-note=no
 	as --64 $(KERNELDIR)/asm/kernel_entry.asm -o $(BIN)/kernel_entry.o --mx86-used-note=no
-	as $(KERNELDIR)/util/isr.asm -o $(BIN)/isr.o --mx86-used-note=no
-	as $(KERNELDIR)/util/idt.asm -o $(BIN)/idt-asm.o --mx86-used-note=no
+	as --64 $(KERNELDIR)/util/isr.asm -o $(BIN)/isr.o --mx86-used-note=no
+	as --64 $(KERNELDIR)/util/idt.asm -o $(BIN)/idt-asm.o --mx86-used-note=no
+	as --64 $(KERNELDIR)/util/gdt.asm -o $(BIN)/gdt-asm.o --mx86-used-note=no
 	head -c 10240K < /dev/zero > $(BIN)/zeroes.bin
 
 kernel:
@@ -150,7 +151,7 @@ together:
 		--oformat binary -e start -melf_x86_64 -ffreestanding -shared -Ttext 0x7c00
 	$(LD) $(OS_LDFLAGS) -o $(BIN)/full_kernel.bin -Ttext 0x1000 \
 	$(BIN)/kernel_entry.o $(BIN)/kernel.o $(BIN)/isr.o $(BIN)/idt-asm.o \
-		$(OBJECTS_UTIL) $(OBJECTS_32BIT) $(OBJECTS_LIBOS) --oformat binary
+		$(BIN)/gdt-asm.o $(OBJECTS_UTIL) $(OBJECTS_32BIT) $(OBJECTS_LIBOS) --oformat binary
 	#$(OBJECTS_REALMODE)
 	@cat $(BIN)/boot.bin $(BIN)/full_kernel.bin $(BIN)/zeroes.bin > $(BIN)/OS.bin
 
