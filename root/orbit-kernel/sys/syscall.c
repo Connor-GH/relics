@@ -1,5 +1,6 @@
 #include <sys/syscall.h>
 
+// TODO unused
 long
 syscall(long number, ...)
 {

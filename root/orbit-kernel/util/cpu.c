@@ -1,6 +1,7 @@
 /* everything to do with early CPU management */
 #include <cpu.h>
 #include <kio.h>
+#include <orbit-kernel/orbit.h>
 // bitops, cpuflags
 #define _AC(X, Y) X
 #define _UL(x) (_AC(x, UL))
@@ -22,13 +23,6 @@ cpu_features_struct cpu_features = {
 	.avx2 = 0,
 	.avx512 = 0,
 };
-
-void __attribute__((noreturn)) halt(void)
-{
-	__asm__ __volatile__("hlt\t\n");
-	while (1) {
-	}
-}
 
 static int
 has_fpu(void)
@@ -128,7 +122,8 @@ cpuflags(void)
 		cpu_features.fpu = 1;
 		log_printk("FPU available\n");
 	} else {
-		halt(); /* no FPU; halt */
+		log_printk("No FPU available; halting\n");
+		HALT;
 	}
 	if (has_sse() > 0) {
 		cpu_features.sse = 1;
@@ -143,7 +138,7 @@ cpuflags(void)
 		cpuid_call(0x0, 0, &intel_level, &cpu_vendor[0], &cpu_vendor[2],
 				   &cpu_vendor[1]);
 	} else {
-		halt();
+		HALT;
 	}
 }
 
@@ -151,9 +146,6 @@ void
 set_cpu_vendor_name(void)
 {
 	u32 bitmask = 255; // 11111111
-	_Bool need_to_log = 0;
-	if (cpu_vendor_name[0] == 0)
-		need_to_log = 1;
 	cpuflags();
 	cpu_vendor_name[0] = (char)(cpu_vendor[0] & bitmask); // lower 7-0 bits
 	cpu_vendor_name[1] =
@@ -171,6 +163,5 @@ set_cpu_vendor_name(void)
 	cpu_vendor_name[10] = (char)((cpu_vendor[2] & (bitmask << 16)) >> 16);
 	cpu_vendor_name[11] = (char)((cpu_vendor[2] & (bitmask << 24)) >> 24);
 	cpu_vendor_name[12] = '\0';
-	if (need_to_log)
-		log_printk("CPU Vendor: %s\n", cpu_vendor_name);
+	log_printk("CPU Vendor: %s\n", cpu_vendor_name);
 }

@@ -9,7 +9,6 @@ test_memory(void)
 {
 	char *unsafe_buf;
 	char *safe_buf;
-	// init_all_memory(); // is fine
 	init_vga(BRIGHT_GREEN, BLACK);
 	reset_video_memory();
 

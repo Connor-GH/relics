@@ -1,6 +1,7 @@
 #include <kio-realmode.h>
 #include <memory.h>
 
+// TODO file unused
 static uint16_t *vga_buffer;
 
 static uint32_t vga_index = 0;

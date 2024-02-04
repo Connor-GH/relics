@@ -8,7 +8,6 @@
 #.extern memory_map
 #call memory_map
 cli
-cld
 # ds is uninitialized. lgdt uses ds as its segment so let's init it
 xor ax,ax
 mov ds,ax
@@ -38,6 +37,7 @@ mov gs, ax
 mov esp, 0x90000 # tmp stack.
 mov ebp, esp # swapped s, b
 
+cld
 call check_multiboot
 call check_cpuid
 call check_long_mode

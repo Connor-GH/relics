@@ -2,6 +2,7 @@
 #include <kio-realmode.h>
 #include <e820-realmode.h>
 
+// TODO file unused
 static SMAP_entry_t *entries_buffer = 0;
 static SMAP_entry_t *smap = (SMAP_entry_t *)0x1000;
 static const int smap_size = 0x2000;
@@ -72,7 +73,6 @@ detectMemory(int maxentries)
 	return entries;
 }
 
-// TODO: clang does not return from this function
 void
 memory_map(void)
 {

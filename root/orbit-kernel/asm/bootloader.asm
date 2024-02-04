@@ -20,7 +20,7 @@ mov bx, KERNEL_LOCATION
  * This is the temporary solution until a disk
  * filesystem gets written.
  */
-mov dh, 53 /*800*/ /*35*/
+mov dh, 53
 
 mov ah, 0x02
 mov al, dh
@@ -43,8 +43,6 @@ int 0x10
 #int 0x10
 #mov ax,0x12 # VGA 640x480 16 color
 #int 0x10
-#disable interrupts
-//cli
 # enable A20 line, this enables bit number 20 in the address
 in al,0x92
 or al,2
