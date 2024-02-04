@@ -54,6 +54,14 @@ memcpy(void *dest, void *src, size_t n)
 	return (void *)dest;
 }
 
+void *memset(void *s, int c, size_t n) {
+	for (size_t i = 0; i < n; i++) {
+		((uint8_t *)s)[i] = (uint8_t)c;
+	}
+	return s;
+}
+
+
 char *
 strcpy(char *dest, const char *src)
 {

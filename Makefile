@@ -107,9 +107,10 @@ endif
 QEMU_RUN += $(QEMU_FLAGS)
 
 include cc_and_flags.mk
-#OS_CFLAGS += $(_CFLAGS)
-#LIBOS_CFLAGS += $(_CFLAGS)
-#OS_LDFLAGS += $(_LFLAGS)
+OS_CFLAGS += $(_CFLAGS)
+LIBOS_CFLAGS += $(_CFLAGS)
+OS_LDFLAGS += $(_LFLAGS)
+D_IVARS = -I$(KERNELDIR)/util/d/runtime
 
 all: clean build run
 
@@ -143,7 +144,7 @@ $(OBJECTS_UTIL): $(BIN)/%.o : $(KERNELDIR)/util/%.c
 	$(CC) $(OS_CFLAGS) -c $< -o $@
 
 $(D_OBJECTS): $(BIN)%.o : $(KERNELDIR)/util/d/%.d
-	$(DCC) $(_DFLAGS) -c $< $(DCC_BASIC_O)$@
+	$(DCC) $(_DFLAGS) $(D_IVARS) -c $< $(DCC_BASIC_O)$@
 
 
 $(OBJECTS_32BIT): $(BIN)/%.o : $(KERNELDIR)/32bit/%.c

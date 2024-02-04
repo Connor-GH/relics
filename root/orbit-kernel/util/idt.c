@@ -3,7 +3,8 @@
 #include <kio.h>
 #include <keyboard.h>
 #include <get_ascii_char.h>
-#include <asm/wrappers.h>
+#include <orbit.h>
+#include <orbit-kernel/string.h>
 #define IDT_MAX_DESCRIPTORS 256
 #define GDT_CS64_OFFSET ret_gdt_offset() //0x8
 #define TSS_IST_EXCEPTION 001
@@ -12,26 +13,48 @@
 	idt_install_handler(isr_stub, n)
 
 #define IRQ(irq, fn, n)      \
-	extern void irq(void);   \
-	extern void fn(regs_t *);\
-	irq_handlers[n] = fn;    \
+	extern void irq(regs_t *); \
+	irq_install_handler(n, fn); \
 	do {                     \
-	} while (0) //\
-    //idt_install_handler(irq, n + 0x20)
+	} while (0)
 
 #define PRETTY_PRINT_INT(x) printk("%s: %lu (%x)\n", #x, x, x); do{}while(0)
 #define panic_irq(s) \
 	printk(s);       \
-	__asm__ __volatile__("cli; hlt\t\n")
+	__asm__ __volatile__("sti; hlt\t\n")
+
 enum {
 	GATE_TYPE_INTERRUPT = 0xE,
 	GATE_TYPE_TRAP = 0xF,
 	GATE_TYPE_CALL = 0xC,
 	GATE_TYPE_TASK = 0x5
 };
-/* https://wiki.osdev.org/Interrupts_Tutorial
- * (based on code licensed under an MIT license) */
 
+void (*irq_handlers[IDT_MAX_DESCRIPTORS])(
+	regs_t *) = {0};
+// static void *irq_handlers[IDT_MAX_DESCRIPTORS] = {0};
+static void irq_install_handler(int irq, void (*handler)(regs_t *r)) {
+	irq_handlers[irq] = handler;
+}
+
+static void decipher_error_code(uint64_t error_code) {
+
+	printk("This error code was caused for the following reasons: \n");
+	if (error_code % 2 != 0) {
+		printk("- happened due to external hardware (outside of processor)\n");
+	}
+	printk("- selector index references a descriptor in the ");
+
+	// 0b11 in binary
+	switch ((error_code >> 1) & 3) {
+		case 0: printk("GDT (0b00)\n"); break;
+		case 1: printk("IDT (0b01)\n"); break;
+		case 2: printk("LDT (0b10)\n"); break;
+		case 3: printk("IDT (0b11)\n"); break;
+		default: break;
+	}
+	printk("In the index: %lu\n", (error_code & 0x0000FFFF) >> 3);
+}
 extern uintptr_t
 ret_gdt_offset(void);
 
@@ -51,12 +74,14 @@ typedef struct {
 static idt_entry_t idt[IDT_MAX_DESCRIPTORS] = {0}; /* Create an array of
 													  IDT entries; aligned
 													  for performance */
-void (*irq_handlers[IDT_MAX_DESCRIPTORS])(
-	regs_t *);
+
 typedef struct {
 	uint16_t limit; // limit; must be size of IDT descriptors - 1
 	uint64_t base; // base; address of idt descriptors
 } __attribute__((packed)) idtr_t;
+extern void
+idt_reload(idtr_t *reg);
+
 static void
 dump_idt_descriptors(void)
 {
@@ -72,26 +97,6 @@ dump_idt_descriptors(void)
 			   idt[i].isr_low, idt[i].kernel_cs, idt[i].bits.type,
 			   idt[i].bits.p, idt[i].isr_mid, idt[i].isr_high, idt[i].reserved);
 	}
-}
-static void
-fill_irq_table(void)
-{
-	IRQ(irq0, exception_handler, 0);
-	IRQ(irq1, kbd_irq_handler, 1);
-	IRQ(irq2, exception_handler, 2);
-	IRQ(irq3, exception_handler, 3);
-	IRQ(irq4, exception_handler, 4);
-	IRQ(irq5, exception_handler, 5);
-	IRQ(irq6, exception_handler, 6);
-	IRQ(irq7, spurious_interrupt, 7);
-	IRQ(irq8, exception_handler, 8);
-	IRQ(irq9, exception_handler, 9);
-	IRQ(irq10, exception_handler, 10);
-	IRQ(irq11, exception_handler, 11);
-	IRQ(irq12, exception_handler, 12);
-	IRQ(irq13, exception_handler, 13);
-	IRQ(irq14, exception_handler, 14);
-	IRQ(irq15, exception_handler, 15);
 }
 
 static idtr_t idtr;
@@ -138,9 +143,9 @@ exception_handler(regs_t *r)
 		PIC_acknowledge(0x20);
 		return;
 	}
-	printk("%s\n", __func__);
 	if (r->irq < 32) {
-		PRETTY_PRINT_INT(r->r15);
+
+		/*PRETTY_PRINT_INT(r->r15);
 		PRETTY_PRINT_INT(r->r14);
 		PRETTY_PRINT_INT(r->r13);
 		PRETTY_PRINT_INT(r->r12);
@@ -160,22 +165,28 @@ exception_handler(regs_t *r)
 		PRETTY_PRINT_INT(r->rip);
 		PRETTY_PRINT_INT(r->cs);
 		PRETTY_PRINT_INT(r->rflags);
-		PRETTY_PRINT_INT(r->rsp);
-		PRETTY_PRINT_INT(PIC_get_isr());
-		PRETTY_PRINT_INT(PIC_get_irr());
+		PRETTY_PRINT_INT(r->rsp);*/
+		decipher_error_code(r->error_code);
 		panic_irq(exceptions[r->irq]);
-	} else {
-		printk("NO\n");
-		(*irq_handlers[r->irq - 32])(r);
+	} else if (32 < r->irq && r->irq < 32 + 16) {
+		printk("Calling IRQ\n");
+		void (*handler)(regs_t *r);
+		handler = irq_handlers[r->irq - 32];
+		if (handler) {
+			printk("Valid IRQ handler\n");
+			handler(r);
+			//ASM("cli; hlt");
+		}
+		PRETTY_PRINT_INT(r->irq);
+		PIC_acknowledge(r->irq);
 	}
-	PIC_acknowledge(r->irq);
 }
 #endif
 
 #define FLAG_SET(number, flag) number |= (flag)
 #define FLAG_UNSET(number, flag) number &= ~(flag)
 
-void
+static void
 idt_set_descriptor(uint8_t vector, uintptr_t isr, uint8_t flags,
 		__attribute__((unused)) uint8_t ist)
 {
@@ -191,9 +202,14 @@ idt_set_descriptor(uint8_t vector, uintptr_t isr, uint8_t flags,
 	descriptor->isr_mid = (uint16_t)((isr >> 16) & 0xFFFF);
 	descriptor->isr_high = (uint32_t)((isr >> 32)); // & 0xFFFFFFFF);
 	descriptor->reserved = 0;
+
+	idtr.base = (uintptr_t)&idt[0];
+	idtr.limit = (uint16_t)sizeof(idt_entry_t) * IDT_MAX_DESCRIPTORS - 1;
+	idt_reload(&idtr);
 }
 
 extern uint64_t isr_stub_table[];
+extern uint64_t irq_stub_table[];
 static void
 sanity_check_all_structures(void)
 {
@@ -204,30 +220,6 @@ sanity_check_all_structures(void)
 		   sizeof(idt[0]) * 8);
 }
 
-extern void
-idt_reload(idtr_t *reg);
-void
-idt_init(void)
-{
-	PIC_enable();
-	idtr.base = (uintptr_t)&idt[0];
-	idtr.limit = (uint16_t)sizeof(idt_entry_t) * IDT_MAX_DESCRIPTORS - 1;
-	for (uint8_t vector = 0; vector < 32; vector++) {
-		idt_set_descriptor(vector, isr_stub_table[vector],
-						   IDT_DESCRIPTOR_EXCEPTION, TSS_IST_EXCEPTION);
-		//vectors[vector] = 1;
-	}
-	fill_irq_table();
-
-	idt_reload(&idtr);
-
-	// shouldn't be needed as there is a function
-	//__asm__ __volatile__ ("lidt %0\t\n" : : "m"(idtr)); // load the new IDT
-	log_printk("IDT initialized\n");
-	sanity_check_all_structures();
-	dump_idt_descriptors();
-	//ASM("hlt");
-}
 
 void
 enable_interrupts(void)
@@ -239,18 +231,65 @@ disable_interrupts(void)
 {
 	ASM("cli\t\n"); // clear the interrupt flag
 }
-//#if 0
 
-void //__attribute__((no_caller_saved_registers))
+static void //__attribute__((no_caller_saved_registers))
 kbd_irq_handler(__attribute__((unused)) regs_t *r)
 {
 	unsigned char scan_code = inb(0x60);
 	printk("Raw scan code: %x\n", scan_code);
 	//__asm__ __volatile__("hlt\t\n");
 }
-void spurious_interrupt(__attribute__((unused)) regs_t *r) {
+static void
+timer_handler(__attribute__((unused)) regs_t *r)
+{
+	printk(".");
+}
+static void spurious_interrupt(__attribute__((unused)) regs_t *r) {
 	ASM("nop");
 	ASM("nop");
 	ASM("nop");
 }
-//#endif
+
+static void
+fill_irq_table(void)
+{
+	IRQ(irq0, timer_handler, 0);
+	IRQ(irq1, kbd_irq_handler, 1);
+	IRQ(irq2, exception_handler, 2);
+	IRQ(irq3, exception_handler, 3);
+	IRQ(irq4, exception_handler, 4);
+	IRQ(irq5, exception_handler, 5);
+	IRQ(irq6, exception_handler, 6);
+	IRQ(irq7, spurious_interrupt, 7);
+	IRQ(irq8, exception_handler, 8);
+	IRQ(irq9, exception_handler, 9);
+	IRQ(irq10, exception_handler, 10);
+	IRQ(irq11, exception_handler, 11);
+	IRQ(irq12, exception_handler, 12);
+	IRQ(irq13, exception_handler, 13);
+	IRQ(irq14, exception_handler, 14);
+	IRQ(irq15, exception_handler, 15);
+}
+void
+idt_init(void)
+{
+	memset(idt, 0, sizeof(idt_entry_t) * IDT_MAX_DESCRIPTORS - 1);
+
+	for (uint8_t vector = 0; vector < 31; vector++) {
+		idt_set_descriptor(vector, isr_stub_table[vector],
+						   IDT_DESCRIPTOR_EXCEPTION, TSS_IST_EXCEPTION);
+	}
+
+	for (uint8_t vector = 32; vector < 47; vector++) {
+		idt_set_descriptor(vector, irq_stub_table[vector - 32],
+						   IDT_DESCRIPTOR_EXCEPTION, TSS_IST_EXCEPTION);
+	}
+	fill_irq_table();
+	PIC_enable();
+
+
+	log_printk("IDT initialized\n");
+	sanity_check_all_structures();
+//	dump_idt_descriptors();
+	//ASM("hlt");
+}

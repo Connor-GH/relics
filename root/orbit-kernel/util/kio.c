@@ -291,7 +291,7 @@ print_double(double num)
 #endif
 
 static void
-decimal_to_base(unsigned int n, int base)
+decimal_to_base(unsigned long n, int base)
 {
 	const char digits[17] = "0123456789abcdef";
 	char num[64];
@@ -362,6 +362,15 @@ _print(const char *format, va_list *argp)
 				case 'd': {
 					long ld = va_arg(*argp, long);
 					print_long(ld);
+					break;
+				}
+				case 'b': {
+					unsigned long lb = va_arg(*argp, unsigned long);
+					if (lb != 0) {
+						print_char('0');
+						print_char('b');
+					}
+					decimal_to_base(lb, 2);
 					break;
 				}
 				default: {

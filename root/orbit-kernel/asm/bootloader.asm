@@ -56,17 +56,5 @@ hlt
 
 
 BOOT_DISK: .byte 0
-.align 4
-GDT_PTR:
-.word GDT_END-GDT-1
-.long GDT # offset
-
-.align 16
-GDT:
-GDT_NULL: .quad 0 # required on some platforms, disallow use of segment 0
-GDT_BOOT_DS: .quad 0x00CF92000000FFFF
-GDT_BOOT_CS: .quad 0x00CF9A000000FFFF # same as DS but with executable set in access byte
-GDT_CS64:    .quad 0x00209A0000000000 # same as above but 64-bit
-GDT_END:
 .fill 510 - (. - start), 1, 0 # pad to 512 bytes
 .word 0xAA55

@@ -137,6 +137,9 @@ init_kernel(void)
 	//ASM("int $0x0e\t\n");
 	volatile int a = 1;
 	volatile int b = 0;
+	ASM("int $0x8\t\n");
+	extern void safe_println(const char *fmt, ...);
+	safe_println("this");
 	//volatile int c = a / b;
 	//printk("%d\n", (volatile int)c);
 	for (;;) {

@@ -31,12 +31,7 @@ typedef struct __attribute__((packed)) {
 void
 exception_handler(regs_t *r);
 
-void
-set_gdt_offset(long offset);
-
 //void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags, uint8_t ist);
-void
-idt_set_descriptor(uint8_t vector, uintptr_t isr, uint8_t flags, uint8_t ist);
 void
 idt_init(void);
 
@@ -60,7 +55,5 @@ void
 enable_interrupts(void);
 void
 disable_interrupts(void);
-void
-irq_install_keyboard(void);
 
 #endif /* IDT_H */

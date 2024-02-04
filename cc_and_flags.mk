@@ -53,9 +53,6 @@ endif #compiler
 ifeq ($(DEBUG),true)
 	# generic security/debug flags
 endif # DEBUG
-ifeq ($(RELEASE),true)
-	_COMMON_CFLAGS += -fstack-clash-protection -fcf-protection
-endif
 
 
 # Flags every compile will need
@@ -70,9 +67,9 @@ ifneq ($(DCC), gdc)
 	DCC_BASIC_O = -of=
 	_DFLAGS += -release -betterC
   ifeq ($(DCC),dmd)
-	_DFLAGS += -O -mcpu=$(D_MCPU_DMD) -mattr=-avx,-sse,64bit
+	_DFLAGS += -O -mcpu=$(D_MCPU_DMD) -defaultlib=none # -mattr=-avx,-sse,64bit
   else # is ldc
-	_DFLAGS += -O3 -mcpu=$(MARCH) -mattr=-avx,-sse,64bit
+	_DFLAGS += -O3 -mcpu=$(MARCH) -nodefaultlib -mattr=-avx,-sse,64bit
 	# _LD_DFLAGS += -L-lstdc++ -release
     ifeq ($(CC), clang)
     ifeq ($(DEBUG),true)
@@ -85,7 +82,7 @@ ifneq ($(DCC), gdc)
 
   endif # if dmd/ldc
 else
-	_DFLAGS += $(COMMON_FLAGS) -march=$(MARCH) -fno-druntime $(DFLAGS)
+	_DFLAGS += $(COMMON_FLAGS) -march=$(MARCH) -fno-druntime -defaultlib=none -fno-stack-protector $(DFLAGS)
 	_LD_DFLAGS +=
 	GDC_XD = -xd
 endif # if gdc
