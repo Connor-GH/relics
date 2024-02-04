@@ -134,6 +134,14 @@ print_new_line(void)
 static void
 print_char(const unsigned char ch)
 {
+	if (ch == 0)
+		return;
+	if (ch == '\b') {
+		vga_index--;
+		vga_buffer[vga_index] = vga_entry(' ', g_fore_color, g_back_color);
+		update_cursor(vga_index % VGA_WIDTH, next_line_index - 1);
+		return;
+	}
 	if (ch == '\n') {
 		print_new_line();
 	} else if (ch == '\t') {
@@ -142,6 +150,8 @@ print_char(const unsigned char ch)
 	} else {
 		vga_buffer[vga_index] = vga_entry(ch, g_fore_color, g_back_color);
 		vga_index++;
+		if (vga_index % VGA_WIDTH == 0)
+			next_line_index++;
 		update_cursor(vga_index % VGA_WIDTH, next_line_index - 1);
 	}
 }

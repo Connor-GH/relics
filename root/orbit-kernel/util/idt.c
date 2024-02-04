@@ -1,13 +1,14 @@
 #include <idt.h>
 #include <pic.h>
 #include <kio.h>
-#include <keyboard.h>
-#include <get_ascii_char.h>
+// #include <keyboard.h>
+#include <ps2_keyboard.h>
+// #include <get_ascii_char.h>
 #include <orbit.h>
 #include <orbit-kernel/string.h>
 #define IDT_MAX_DESCRIPTORS 256
 #define GDT_CS64_OFFSET ret_gdt_offset() //0x8
-#define TSS_IST_EXCEPTION 001
+#define TSS_IST_EXCEPTION 1
 #define ISR(isr_stub, n)        \
 	extern void isr_stub(void); \
 	idt_install_handler(isr_stub, n)
@@ -24,8 +25,6 @@ void ATTR(noreturn) panic_irq(const char *string) {
 	ASM("cli; hlt\t\n");
 }
 
-//#define FLAG_SET(number, flag) number |= (flag)
-//#define FLAG_UNSET(number, flag) number &= ~(flag)
 extern uint64_t isr_stub_table[];
 extern uint64_t irq_stub_table[];
 extern uintptr_t ret_gdt_offset(void);
@@ -38,6 +37,7 @@ static idtr_t idtr;
 
 extern void idt_reload(idtr_t *reg);
 
+static volatile uint64_t timer_ticks = 0;
 enum {
 	GATE_TYPE_INTERRUPT = 0xE,
 	GATE_TYPE_TRAP = 0xF,
@@ -85,7 +85,6 @@ typedef struct {
 static idt_entry_t idt[IDT_MAX_DESCRIPTORS] = {0}; /* Create an array of
 													  IDT entries; aligned
 													  for performance */
-
 
 static void
 dump_idt_descriptors(void)
@@ -210,12 +209,12 @@ static void
 kbd_irq_handler(__attribute__((unused)) regs_t *r)
 {
 	unsigned char scan_code = inb(0x60);
-	printk("Raw scan code: %x\n", scan_code);
+	printk("%c", to_character(scan_code));
 }
 static void
 timer_handler(__attribute__((unused)) regs_t *r)
 {
-	printk(".");
+	timer_ticks++;
 }
 static void spurious_interrupt(__attribute__((unused)) regs_t *r) {
 	ASM("nop");
