@@ -172,4 +172,5 @@ idt_common_stub:
 
     _popaq
     add rsp,16
+sti
 	iretq           # pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP

@@ -19,9 +19,24 @@
 	} while (0)
 
 #define PRETTY_PRINT_INT(x) printk("%s: %lu (%x)\n", #x, x, x); do{}while(0)
-#define panic_irq(s) \
-	printk(s);       \
-	__asm__ __volatile__("sti; hlt\t\n")
+void ATTR(noreturn) panic_irq(const char *string) {
+	printk(string);
+	ASM("cli; hlt\t\n");
+}
+
+//#define FLAG_SET(number, flag) number |= (flag)
+//#define FLAG_UNSET(number, flag) number &= ~(flag)
+extern uint64_t isr_stub_table[];
+extern uint64_t irq_stub_table[];
+extern uintptr_t ret_gdt_offset(void);
+
+typedef struct {
+	uint16_t limit; // limit; must be size of IDT descriptors - 1
+	uint64_t base; // base; address of idt descriptors
+} __attribute__((packed)) idtr_t;
+static idtr_t idtr;
+
+extern void idt_reload(idtr_t *reg);
 
 enum {
 	GATE_TYPE_INTERRUPT = 0xE,
@@ -30,9 +45,7 @@ enum {
 	GATE_TYPE_TASK = 0x5
 };
 
-void (*irq_handlers[IDT_MAX_DESCRIPTORS])(
-	regs_t *) = {0};
-// static void *irq_handlers[IDT_MAX_DESCRIPTORS] = {0};
+void (*irq_handlers[IDT_MAX_DESCRIPTORS])(regs_t *) = {0};
 static void irq_install_handler(int irq, void (*handler)(regs_t *r)) {
 	irq_handlers[irq] = handler;
 }
@@ -55,8 +68,6 @@ static void decipher_error_code(uint64_t error_code) {
 	}
 	printk("In the index: %lu\n", (error_code & 0x0000FFFF) >> 3);
 }
-extern uintptr_t
-ret_gdt_offset(void);
 
 typedef struct {
 	uint16_t isr_low; // The lower 16 bits of the ISR's address
@@ -75,12 +86,6 @@ static idt_entry_t idt[IDT_MAX_DESCRIPTORS] = {0}; /* Create an array of
 													  IDT entries; aligned
 													  for performance */
 
-typedef struct {
-	uint16_t limit; // limit; must be size of IDT descriptors - 1
-	uint64_t base; // base; address of idt descriptors
-} __attribute__((packed)) idtr_t;
-extern void
-idt_reload(idtr_t *reg);
 
 static void
 dump_idt_descriptors(void)
@@ -99,11 +104,7 @@ dump_idt_descriptors(void)
 	}
 }
 
-static idtr_t idtr;
-//static _Bool vectors[IDT_MAX_DESCRIPTORS];
 
-#if 1
-/*__attribute__((no_caller_saved_registers))*/
 void
 exception_handler(regs_t *r)
 {
@@ -111,7 +112,7 @@ exception_handler(regs_t *r)
 								 "debug",
 								 "NMI",
 								 "breakpoint",
-								 "invalid1",
+								 "invalid",
 								 "out of bounds",
 								 "invalid opcode",
 								 "spurious",
@@ -123,7 +124,7 @@ exception_handler(regs_t *r)
 								 "General Protection Fault",
 								 "page fault",
 								 "unknown interrupt",
-								 "invalid2",
+								 "invalid",
 								 "alignment check",
 								 "machine check",
 								 "reserved",
@@ -144,47 +145,21 @@ exception_handler(regs_t *r)
 		return;
 	}
 	if (r->irq < 32) {
-
-		/*PRETTY_PRINT_INT(r->r15);
-		PRETTY_PRINT_INT(r->r14);
-		PRETTY_PRINT_INT(r->r13);
-		PRETTY_PRINT_INT(r->r12);
-		PRETTY_PRINT_INT(r->r11);
-		PRETTY_PRINT_INT(r->r10);
-		PRETTY_PRINT_INT(r->r9);
-		PRETTY_PRINT_INT(r->r8);
-		PRETTY_PRINT_INT(r->rbp);
-		PRETTY_PRINT_INT(r->rdi);
-		PRETTY_PRINT_INT(r->rsi);
-		PRETTY_PRINT_INT(r->rdx);
-		PRETTY_PRINT_INT(r->rcx);
-		PRETTY_PRINT_INT(r->rbx);
-		PRETTY_PRINT_INT(r->rax);
+		printk("**KERNEL FAULT**: ");
 		PRETTY_PRINT_INT(r->irq);
-		PRETTY_PRINT_INT(r->error_code);
-		PRETTY_PRINT_INT(r->rip);
-		PRETTY_PRINT_INT(r->cs);
-		PRETTY_PRINT_INT(r->rflags);
-		PRETTY_PRINT_INT(r->rsp);*/
+		printk("At: %x\n", r->rsp);
 		decipher_error_code(r->error_code);
 		panic_irq(exceptions[r->irq]);
-	} else if (32 < r->irq && r->irq < 32 + 16) {
-		printk("Calling IRQ\n");
+	} else if (32 <= r->irq && r->irq < 32 + 16) {
 		void (*handler)(regs_t *r);
 		handler = irq_handlers[r->irq - 32];
 		if (handler) {
-			printk("Valid IRQ handler\n");
 			handler(r);
-			//ASM("cli; hlt");
 		}
-		PRETTY_PRINT_INT(r->irq);
 		PIC_acknowledge(r->irq);
 	}
 }
-#endif
 
-#define FLAG_SET(number, flag) number |= (flag)
-#define FLAG_UNSET(number, flag) number &= ~(flag)
 
 static void
 idt_set_descriptor(uint8_t vector, uintptr_t isr, uint8_t flags,
@@ -208,16 +183,15 @@ idt_set_descriptor(uint8_t vector, uintptr_t isr, uint8_t flags,
 	idt_reload(&idtr);
 }
 
-extern uint64_t isr_stub_table[];
-extern uint64_t irq_stub_table[];
+
 static void
 sanity_check_all_structures(void)
 {
-	printk("idtr: Expected size: 80; Real size: %lu\n", sizeof(idtr) * 8);
-	printk("idtr: .base = %x, .limit = %lu\n", idtr.base, idtr.limit);
+	if ((sizeof(idtr) * 8) != 80)
+		panic_irq("ERROR: idtr: not correct size\n");
 
-	printk("idt_entry_t: Expected size: 128; Real size: %lu\n",
-		   sizeof(idt[0]) * 8);
+	if ((sizeof(idt[0]) * 8) != 128)
+		panic_irq("ERROR: idt_entry_t: not correct size\n");
 }
 
 
@@ -232,12 +206,11 @@ disable_interrupts(void)
 	ASM("cli\t\n"); // clear the interrupt flag
 }
 
-static void //__attribute__((no_caller_saved_registers))
+static void
 kbd_irq_handler(__attribute__((unused)) regs_t *r)
 {
 	unsigned char scan_code = inb(0x60);
 	printk("Raw scan code: %x\n", scan_code);
-	//__asm__ __volatile__("hlt\t\n");
 }
 static void
 timer_handler(__attribute__((unused)) regs_t *r)
@@ -273,9 +246,10 @@ fill_irq_table(void)
 void
 idt_init(void)
 {
+	sanity_check_all_structures();
 	memset(idt, 0, sizeof(idt_entry_t) * IDT_MAX_DESCRIPTORS - 1);
 
-	for (uint8_t vector = 0; vector < 31; vector++) {
+	for (uint8_t vector = 0; vector < 32; vector++) {
 		idt_set_descriptor(vector, isr_stub_table[vector],
 						   IDT_DESCRIPTOR_EXCEPTION, TSS_IST_EXCEPTION);
 	}
@@ -286,10 +260,5 @@ idt_init(void)
 	}
 	fill_irq_table();
 	PIC_enable();
-
-
 	log_printk("IDT initialized\n");
-	sanity_check_all_structures();
-//	dump_idt_descriptors();
-	//ASM("hlt");
 }

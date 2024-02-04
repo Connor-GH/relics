@@ -130,18 +130,11 @@ init_kernel(void)
 	//355./113);
 #endif
 	enable_interrupts();
-	IRQ_set_mask(0);
+	//IRQ_set_mask(0);
 
-	//ASM("int $0x0e\t\n");
-	//ASM("int $0x0e\t\n");
-	//ASM("int $0x0e\t\n");
-	volatile int a = 1;
-	volatile int b = 0;
 	//ASM("int $0x8\t\n");
 	extern void safe_println(const char *fmt, ...);
 	safe_println("this");
-	//volatile int c = a / b;
-	//printk("%d\n", (volatile int)c);
 	for (;;) {
 		__asm__ __volatile__("hlt");
 	}

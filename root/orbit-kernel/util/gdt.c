@@ -18,29 +18,6 @@
 #define GDT_MAX_ENTRIES 8192
 extern void gdt_reload(struct gdt_ptr *);
 
-#if 0
-struct bits {
-	uint8_t limit_high : 4,
-			flags : 4;
-} __attribute__((packed));
-struct GDT_struct {
-#if 0
-	uint64_t limit1: 16,
-		 base1: 24,
-		 access: 8,
-		 limit2: 4,
-		 flags: 4,
-		 base2: 8;
-#endif
-	uint64_t base2: 8,
-		 flags: 4,
-		 limit2: 4,
-		 access: 8,
-		 base1: 24,
-		 limit1: 16;
-} __attribute__((packed));
-#endif
-
 static struct gdt_ptr gdtr;
 
 
@@ -71,37 +48,28 @@ static void fill_gdt_descriptor_item(size_t vector, uint32_t base,
 static void
 sanity_check_all_structures(void)
 {
-	printk("gdtr: Expected size: 80; Real size: %lu\n", sizeof(gdtr) * 8);
-	printk("gdtr: .base = %x, .limit = %lu\n", gdtr.base, gdtr.limit);
-
-	printk("GDT_struct: Expected size: 64; Real size: %lu\n",
-		   sizeof(_gdt_descriptors[0]) * 8);
+	if ((sizeof(gdtr) * 8) != 80) {
+		printk("ERROR: gdtr: not correct size\n");
+		ASM("cli; hlt\t\n");
+	}
 }
+
 extern uintptr_t ret_gdt_cs(void);
 extern uintptr_t ret_gdt_ds(void);
 
 
 void gdt_init(void) {
 	memset(_gdt_descriptors, 0, sizeof(uint64_t) * GDT_MAX_ENTRIES - 1);
-	// null
 	fill_gdt_descriptor_item(0, 0, 0, 0, 0);
-	// access: 10011010 -> 0x9A
 	fill_gdt_descriptor_item(1, 0, 0xFFFFF, PRESENT_BIT | DPL(0, 0) | DESCRIPTOR_TYPE_CODE_OR_DATA_SEGMENT |
 			EXECUTABLE_BIT_CODE | DIRECTION_CONFORMING_BIT(0) | READ_WRITE_BIT(1) | ACCESS_BIT(0), CODE_SEGMENT);
-	// kernel_data_segm
-	// access: 10010010 -> 0x92
 	fill_gdt_descriptor_item(2, 0, 0xFFFFF, PRESENT_BIT | DPL(0, 0) | DESCRIPTOR_TYPE_CODE_OR_DATA_SEGMENT |
 			EXECUTABLE_BIT_DATA | DIRECTION_CONFORMING_BIT(0) | READ_WRITE_BIT(1) | ACCESS_BIT(0), DATA_SEGMENT);
-	// user_code_segm
 
 	gdtr.limit = (sizeof(uint64_t) * GDT_MAX_ENTRIES) - 1;
 	gdtr.base = (uintptr_t)&_gdt_descriptors[0];
 
-	//gdt_reload(&gdtr);
-	log_printk("GDT initialized from C\n");
-	log_printk("GDT_CS from C: %lb\n", _gdt_descriptors[1]);
-	log_printk("GDT_CS from ASM: %lb\nOld: %lb\n", ret_gdt_cs(), 0x00209A0000000000);
-	log_printk("GDT_DS from C: %lb\n", _gdt_descriptors[2]);
-	log_printk("GDT_DS from ASM: %lb\nOld: %lb\n",ret_gdt_ds(), 158329674399744);
 	sanity_check_all_structures();
+	gdt_reload(&gdtr);
+	log_printk("GDT initialized from C\n");
 }
