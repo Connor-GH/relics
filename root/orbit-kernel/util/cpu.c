@@ -147,21 +147,21 @@ set_cpu_vendor_name(void)
 {
 	u32 bitmask = 255; // 11111111
 	cpuflags();
-	cpu_vendor_name[0] = (char)(cpu_vendor[0] & bitmask); // lower 7-0 bits
+	cpu_vendor_name[0] = (u8)(cpu_vendor[0] & bitmask); // lower 7-0 bits
 	cpu_vendor_name[1] =
-		(char)((cpu_vendor[0] & (bitmask << 8)) >> 8); // 15-8 bits
+		(u8)((cpu_vendor[0] & (bitmask << 8)) >> 8); // 15-8 bits
 	cpu_vendor_name[2] =
-		(char)((cpu_vendor[0] & (bitmask << 16)) >> 16); // 23-16 bits
+		(u8)((cpu_vendor[0] & (bitmask << 16)) >> 16); // 23-16 bits
 	cpu_vendor_name[3] =
-		(char)((cpu_vendor[0] & (bitmask << 24)) >> 24); // 31-24 bits
-	cpu_vendor_name[4] = (char)(cpu_vendor[1] & bitmask);
-	cpu_vendor_name[5] = (char)((cpu_vendor[1] & (bitmask << 8)) >> 8);
-	cpu_vendor_name[6] = (char)((cpu_vendor[1] & (bitmask << 16)) >> 16);
-	cpu_vendor_name[7] = (char)((cpu_vendor[1] & (bitmask << 24)) >> 24);
-	cpu_vendor_name[8] = (char)(cpu_vendor[2] & bitmask);
-	cpu_vendor_name[9] = (char)((cpu_vendor[2] & (bitmask << 8)) >> 8);
-	cpu_vendor_name[10] = (char)((cpu_vendor[2] & (bitmask << 16)) >> 16);
-	cpu_vendor_name[11] = (char)((cpu_vendor[2] & (bitmask << 24)) >> 24);
+		(u8)((cpu_vendor[0] & (bitmask << 24)) >> 24); // 31-24 bits
+	cpu_vendor_name[4] = (u8)(cpu_vendor[1] & bitmask);
+	cpu_vendor_name[5] = (u8)((cpu_vendor[1] & (bitmask << 8)) >> 8);
+	cpu_vendor_name[6] = (u8)((cpu_vendor[1] & (bitmask << 16)) >> 16);
+	cpu_vendor_name[7] = (u8)((cpu_vendor[1] & (bitmask << 24)) >> 24);
+	cpu_vendor_name[8] = (u8)(cpu_vendor[2] & bitmask);
+	cpu_vendor_name[9] = (u8)((cpu_vendor[2] & (bitmask << 8)) >> 8);
+	cpu_vendor_name[10] = (u8)((cpu_vendor[2] & (bitmask << 16)) >> 16);
+	cpu_vendor_name[11] = (u8)((cpu_vendor[2] & (bitmask << 24)) >> 24);
 	cpu_vendor_name[12] = '\0';
 	log_printk("CPU Vendor: %s\n", cpu_vendor_name);
 }

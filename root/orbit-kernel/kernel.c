@@ -130,9 +130,7 @@ init_kernel(void)
 	//355./113);
 #endif
 	enable_interrupts();
-	//IRQ_set_mask(0);
 
-	//ASM("int $0x8\t\n");
 	extern void safe_println(const char *fmt, ...);
 	safe_println("this");
 	for (;;) {

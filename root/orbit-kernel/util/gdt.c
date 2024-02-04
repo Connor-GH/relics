@@ -26,7 +26,7 @@ static uint64_t _gdt_descriptors[GDT_MAX_ENTRIES];
 
 #define set_bit_value(number, bit, value) (number | (value << bit))
 
-uint64_t set_several_bits(uint64_t num,
+static uint64_t set_several_bits(uint64_t num,
 		short idx_inclusive, short idx_exclusive, uint64_t pattern) {
 	short i = 0;
 	for (pattern; idx_inclusive < idx_exclusive; idx_inclusive++, i++) {

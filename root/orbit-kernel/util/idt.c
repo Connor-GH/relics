@@ -1,13 +1,11 @@
 #include <idt.h>
 #include <pic.h>
 #include <kio.h>
-// #include <keyboard.h>
 #include <ps2_keyboard.h>
-// #include <get_ascii_char.h>
 #include <orbit.h>
 #include <orbit-kernel/string.h>
 #define IDT_MAX_DESCRIPTORS 256
-#define GDT_CS64_OFFSET ret_gdt_offset() //0x8
+#define GDT_CS64_OFFSET ret_gdt_offset()
 #define TSS_IST_EXCEPTION 1
 #define ISR(isr_stub, n)        \
 	extern void isr_stub(void); \
@@ -20,7 +18,7 @@
 	} while (0)
 
 #define PRETTY_PRINT_INT(x) printk("%s: %lu (%x)\n", #x, x, x); do{}while(0)
-void ATTR(noreturn) panic_irq(const char *string) {
+static void ATTR(noreturn) panic_irq(const char *string) {
 	printk(string);
 	ASM("cli; hlt\t\n");
 }
