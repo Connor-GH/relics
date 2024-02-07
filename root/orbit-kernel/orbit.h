@@ -10,4 +10,5 @@
 
 #define ATTR(x) __attribute__((x))
 #define NOINLINE ATTR(noinline)
+#define UNREACHABLE __builtin_unreachable
 #endif /* ORBIT_H */

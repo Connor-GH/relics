@@ -37,10 +37,9 @@ idt_init(void);
 
 typedef enum {
 	IDT_FLAG_GATE_TASK = 0x5,
-	IDT_FLAG_GATE_16BIT_INT = 0x6,
-	IDT_FLAG_GATE_16BIT_TRAP = 0x7,
-	IDT_FLAG_GATE_32BIT_INT = 0xe,
-	IDT_FLAG_GATE_32BIT_TRAP = 0xf,
+	IDT_FLAG_GATE_INT = 0xe,
+	IDT_FLAG_GATE_TRAP = 0xf,
+	IDT_FLAG_GATE_CALL = 0xc,
 
 	IDT_FLAG_RING0 = 0 << 5,
 	IDT_FLAG_RING1 = 1 << 5,
@@ -49,7 +48,7 @@ typedef enum {
 
 	IDT_FLAG_PRESENT = 0x80,
 } IDT_FLAGS;
-#define IDT_DESCRIPTOR_EXCEPTION (IDT_FLAG_GATE_32BIT_INT | IDT_FLAG_PRESENT)
+#define IDT_DESCRIPTOR_EXCEPTION (IDT_FLAG_GATE_INT | IDT_FLAG_PRESENT)
 typedef void (*interrupt_handler_t)(void);
 void
 enable_interrupts(void);

@@ -3,8 +3,7 @@
 #include <kio.h>
 #include <orbit-kernel/orbit.h>
 // bitops, cpuflags
-#define _AC(X, Y) X
-#define _UL(x) (_AC(x, UL))
+#define _UL(x) ((unsigned long)x)
 #define _BITUL(x) (_UL(1) << (x))
 
 static u32 cpu_vendor[3];
@@ -27,8 +26,8 @@ cpu_features_struct cpu_features = {
 static int
 has_fpu(void)
 {
-	u16 fcw = -1, fsw = -1;
-	unsigned long cr0;
+	u16 fcw = 0, fsw = 0;
+	unsigned long cr0 = 0;
 
 	__asm__ __volatile__("mov %%cr0,%0\t\n" : "=r"(cr0));
 	if (cr0 & (_BITUL(2) | _BITUL(3))) {
@@ -37,9 +36,9 @@ has_fpu(void)
 	}
 
 	__asm__ __volatile__("fninit\t\n"
-						 "fnstsw %0\t\n"
-						 "fnstcw %1\t\n"
-						 : "+m"(fsw), "+m"(fcw));
+	 	"fnstsw %0\t\n"
+		"fnstcw %1\t\n"
+	 	: "+m"(fsw), "+m"(fcw));
 
 	return fsw == 0 && (fcw & 0x103f) == 0x003f;
 }
@@ -55,16 +54,16 @@ has_fpu(void)
 static int
 has_eflag(unsigned long mask)
 {
-	unsigned long f0, f1;
+	unsigned long f0 = 0, f1 = 0;
 
 	__asm__ __volatile__(PUSHF "    \n\t" PUSHF "    \n\t"
-							   "pop %0    \n\t"
-							   "mov %0,%1 \n\t"
-							   "xor %2,%1 \n\t"
-							   "push %1   \n\t" POPF " \n\t" PUSHF "    \n\t"
-							   "pop %1    \n\t" POPF
-						 : "=&r"(f0), "=&r"(f1)
-						 : "ri"(mask));
+		   "pop %0    \n\t"
+		   "mov %0,%1 \n\t"
+		   "xor %2,%1 \n\t"
+		   "push %1   \n\t" POPF " \n\t" PUSHF "    \n\t"
+		   "pop %1    \n\t" POPF
+	 : "=&r"(f0), "=&r"(f1)
+	 : "ri"(mask));
 
 	return !!((f0 ^ f1) & mask);
 }
@@ -72,9 +71,9 @@ void
 cpuid_call(u32 id, u32 cnt, u32 *a, u32 *b, u32 *c, u32 *d)
 {
 	__asm__ __volatile__("movl $0, %%eax\t\n"
-						 "cpuid\t\n"
-						 : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d)
-						 : "0"(id), "2"(cnt));
+	 "cpuid\t\n"
+	 : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d)
+	 : "0"(id), "2"(cnt));
 }
 
 static int
