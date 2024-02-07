@@ -13,7 +13,7 @@ download with:
 
 compile with:
 
-``make FEATURE_FLAGS=none``
+``make``
 
 
 # Mandatory Dependencies:

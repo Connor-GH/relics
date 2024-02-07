@@ -5,7 +5,7 @@
 #include <memory.h>
 #include <32bit/include/test_memory.h>
 #include <orbit-kernel/math.h>
-#include <asm/wrappers.h>
+#include <orbit.h>
 #include <apploader.h>
 #include <libraryOSes/relics-libOS/apps/shell.h>
 #include <cpu.h>
@@ -13,14 +13,6 @@
 #include <idt.h>
 #include <pic.h>
 #include <gdt.h>
-
-static void
-sleep(int x)
-{
-	for (int i = 0; i < x; i++) {
-		__asm__ __volatile__("nop");
-	}
-}
 
 #define TRANSITION(x)                                       \
                                                             \
@@ -31,22 +23,17 @@ sleep(int x)
 	do {                                                    \
 	} while (0)
 
-static _Bool
-are_interrupts_enabled(void)
-{
-	unsigned long flags;
-	__asm__ __volatile__("pushf\t\n"
-						 "pop %0\t\n"
-						 : "=g"(flags));
-	return flags & (1 << 9);
-}
 
-int
+int ATTR(noreturn)
 init_kernel(void);
-int
+// TODO complete safe_println
+extern void
+safe_println(const char *fmt, ...);
+
+int ATTR(noreturn)
 init_kernel(void)
 {
-	__asm__ __volatile__(".code64\t\n");
+	ASM(".code64\t\n");
 	/*
      * If you ever run into
      * weird space-dependent
@@ -131,12 +118,11 @@ init_kernel(void)
 #endif
 	enable_interrupts();
 
-	extern void safe_println(const char *fmt, ...);
 	safe_println("this");
 	for (;;) {
 		__asm__ __volatile__("hlt");
 	}
 	//relics_shell("> ");
 
-	return 0;
+//	return 0;
 }

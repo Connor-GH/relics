@@ -44,14 +44,14 @@ OS_CFLAGS += \
 			-D__kernel -fno-PIC -DKERNEL_LOG $(KCFLAGS)
 OS_LDFLAGS = -nostdlib -z max-page-size=0x1000 $(LDFLAGS) $(KLDFLAGS)
 
+ifeq ($(FEATURE_FLAGS),)
+FEATURE_FLAGS = none
+endif
 ifeq ($(FEATURE_FLAGS),sse)
 	OS_CFLAGS += -msse
 endif
 ifeq ($(FEATURE_FLAGS),avx)
 	OS_CFLAGS += -msse -mavx
-endif
-ifeq ($(FEATURE_FLAGS),)
-$(error Please set $$FEATURE_FLAGS env var to either sse or avx)
 endif
 ifeq ($(FEATURE_FLAGS),none)
 

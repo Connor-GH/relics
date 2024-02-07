@@ -6,7 +6,7 @@
  * building an ELF loader (yet), since there
  * is not a filesystem. */
 #define RELICS_SHELL "LOAD-APP-0908"
-__attribute__((noreturn)) void
+void
 load_app(char *appcode, long *address);
 
 #endif /* APPLOADER_H */

@@ -2,6 +2,7 @@
 #include <kio.h>
 #include <inttypes.h>
 #include <string.h>
+#include <orbit-kernel/orbit.h>
 
 #define MEMORY_SIZE (32768 * 1024) - 0x7c00
 /* Address will be the address of
@@ -9,8 +10,8 @@
  * we know the return address to make the jump.
  * The appcode is just a magic number that
  * indicates the pattern we search memory for. */
-__attribute__((noreturn)) void
-load_app(char *looking_for, long *address)
+void
+load_app(ATTR(unused) char *looking_for, ATTR(unused) long *address)
 {
 	/* Commented out because "app" loading is a
      * work-in-progress and I'd rather save
