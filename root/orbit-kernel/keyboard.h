@@ -3,7 +3,7 @@
 
 #include <typedefs.h>
 #include <port_functions.h>
-char
+uint8_t
 get_input_keycode(void);
 void
 test_input(void);

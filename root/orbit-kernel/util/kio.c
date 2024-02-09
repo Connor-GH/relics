@@ -7,14 +7,16 @@
 
 static uint16_t *vga_buffer;
 
-static uint32_t vga_index = 0;
+static uint16_t vga_index = 0;
 // counter to store new lines
-static uint32_t next_line_index = 1;
+static uint16_t next_line_index = 1;
 // fore & back color values
 static uint8_t g_fore_color = WHITE, g_back_color = BLACK;
-#define VGA_LENGTH 25
-#define VGA_WIDTH 80
-#define KIO_TABSIZE 4
+enum {
+	VGA_LENGTH = 25,
+	VGA_WIDTH = 80,
+	KIO_TABSIZE = 4
+};
 union double_int64_convert {
 	double d;
 	uint64_t i;
@@ -22,7 +24,7 @@ union double_int64_convert {
 
 /* https://wiki.osdev.org/Text_Mode_Cursor */
 static void
-update_cursor(int x, int y)
+update_cursor(uint16_t x, uint16_t y)
 {
 	/* y is next_line_index */
 	/* x is vga_index % 80 */
@@ -53,7 +55,7 @@ disable_cursor(void)
 }
 
 static uint16_t
-vga_entry(unsigned char ch, uint8_t fore_color, uint8_t back_color)
+vga_entry(char ch, uint8_t fore_color, uint8_t back_color)
 {
 	uint16_t ax = 0;
 	uint8_t ah = 0, al = 0;
@@ -63,7 +65,7 @@ vga_entry(unsigned char ch, uint8_t fore_color, uint8_t back_color)
 	ah |= fore_color;
 	ax = ah;
 	ax <<= 8;
-	al = ch;
+	al = (uint8_t)ch;
 	ax |= al;
 
 	return ax;
@@ -132,7 +134,7 @@ print_new_line(void)
 
 //assign ascii character to video buffer
 static void
-print_char(const unsigned char ch)
+print_char(const char ch)
 {
 	if (ch == 0)
 		return;
@@ -158,10 +160,13 @@ print_char(const unsigned char ch)
 static int
 putchark(int c)
 {
-	if ((c > 255) || (c < 0))
+	if ((c > 255) || (c < 0)) {
 		return -1;
-	else
-		print_char((unsigned char)c);
+	} else {
+		print_char((char)c);
+		return 0;
+	}
+
 }
 
 static uint32_t
@@ -239,7 +244,7 @@ ulltoa(unsigned long long num, char *number)
 
 //print string by calling print_char
 static void
-print_string(const unsigned char *str)
+print_string(const char *str)
 {
 	while (*str) {
 		print_char(*str);
@@ -252,7 +257,7 @@ print_string(const unsigned char *str)
 static void
 print_long_long(long long num)
 {
-	char str_num[digit_count(num) + 1];
+	char str_num[64];
 	lltoa(num, str_num);
 	print_string(str_num);
 }
@@ -269,7 +274,7 @@ print_int(int num)
 static void
 print_unsigned_long_long(unsigned long long num)
 {
-	char str_num[digit_count_unsigned(num) + 1];
+	char str_num[64];
 	ulltoa(num, str_num);
 	print_string(str_num);
 }
@@ -311,8 +316,8 @@ decimal_to_base(unsigned long n, int base)
 		return;
 	}
 	while (n > 0) {
-		num[i] = digits[n % base];
-		n /= base;
+		num[i] = digits[n % (unsigned long)base];
+		n /= (unsigned long)base;
 		i++;
 	}
 	for (int j = i - 1; j >= 0; j--)
@@ -328,7 +333,7 @@ decimal_to_base(unsigned long n, int base)
  *
  * */
 static void
-_print(const char *format, va_list *argp)
+actual_print(const char *format, va_list *argp)
 {
 	while (*format) {
 		if (*format == '%') {
@@ -469,7 +474,7 @@ printk(const char *restrict format, ...)
 {
 	va_list listp;
 	va_start(listp, format);
-	_print(format, &listp);
+	actual_print(format, &listp);
 	va_end(listp);
 }
 
@@ -483,7 +488,7 @@ log_printk(const char *restrict format, ...)
 		printk("[%f] ", PIT_IRQ_timer_get_current_time_since_boot());
 	else
 		printk("[0.00000] ");
-	_print(format, &listp);
+	actual_print(format, &listp);
 	va_end(listp);
 #endif
 }

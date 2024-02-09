@@ -5,6 +5,8 @@
 <img src="pictures/screen2.png" align="right">
 <img src="pictures/screen3.png" align="right">
 
+- builds in 0.1 sec with a 16-thread Ryzen 5700G
+
 download with:
 
 ``git clone https://github.com/Connor-GH/relics``

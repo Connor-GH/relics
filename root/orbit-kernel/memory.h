@@ -7,7 +7,7 @@
 
 uint32_t
 init_all_memory(void);
-int
+size_t
 all_mem_available_bytes(void);
 void
 mem_into_pages(void);

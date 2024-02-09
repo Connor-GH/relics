@@ -12,10 +12,11 @@ enum MEM_PAGE {
 	MEM_RESERVED,
 };
 
-static size_t j = END_OF_MEM - MEMSTART; // bytes of memory available
+static size_t mem_bytes = END_OF_MEM - MEMSTART; // bytes of memory available
 
 struct mem_page {
 	enum MEM_PAGE usable; // = MEM_USABLE;
+	uint32_t padding: 32;
 	void *beginning_ptr;
 	void *end_ptr;
 };
@@ -44,22 +45,24 @@ init_all_memory(void)
 	outb(0x70, 0x31);
 	highmem = inb(0x71);
 
-	return lowmem | highmem << 8;
+	return (uint32_t)(lowmem | highmem << 8);
 }
 
-int
+size_t
 all_mem_available_bytes(void)
 {
-	return j;
+	return mem_bytes;
 }
 
 void
 mem_into_pages(void)
 {
-	bootstrap_malloc();
-	pages[0] = bootstrap_mem;
 	size_t j = 1;
 	size_t i = 4096;
+
+	bootstrap_malloc();
+	pages[0] = bootstrap_mem;
+
 	while ((i < END_OF_MEM) && (j < 4095)) {
 		struct mem_page *temp = (void *)(MEMSTART + j * 30);
 		temp->usable = MEM_USABLE;
@@ -71,7 +74,7 @@ mem_into_pages(void)
 	}
 }
 
-void *
+static void *
 grab_good_page(void)
 {
 	for (int i = 0; pages[i]; i++) {
@@ -83,7 +86,7 @@ grab_good_page(void)
 	return NULL;
 }
 static void *
-malloc_4096_bytes_or_less(size_t size)
+malloc_4096_bytes_or_less(void)
 {
 	void *good_page = grab_good_page();
 	if (good_page == NULL) {
@@ -95,7 +98,7 @@ void *
 malloc(size_t size)
 {
 	if (size < 4096)
-		return malloc_4096_bytes_or_less(size);
+		return malloc_4096_bytes_or_less();
 	else
 		return NULL;
 }

@@ -2,10 +2,10 @@
 #include <kio.h>
 #include <get_ascii_char.h>
 
-char
+uint8_t
 get_input_keycode(void)
 {
-	char ch = 0;
+	uint8_t ch = 0;
 	while ((ch = inb(KEYBOARD_PORT)) != 0) {
 		if (ch > 0)
 			return ch;
@@ -46,7 +46,7 @@ void
 test_input(void)
 {
 	char ch = 0;
-	char keycode = 0;
+	uint8_t keycode = 0;
 	wait_for_io(0x2FFFFFF);
 
 	do {
