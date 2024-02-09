@@ -3,10 +3,10 @@
 .set KERNEL_LOCATION, 0x1000
 .code16
 
-#mov esp, 0x90000
-#mov ebp, esp
-#.extern memory_map
-#call memory_map
+mov esp, 0x90000
+mov ebp, esp
+.extern memory_map
+call memory_map
 cli
 # ds is uninitialized. lgdt uses ds as its segment so let's init it
 xor ax,ax

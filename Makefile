@@ -35,7 +35,7 @@ D_OBJECTS := $(D_SOURCES:$(KERNELDIR)/util/d/%.d=$(BIN)/%.o)
 OS_CFLAGS = -std=$(STD) -O0 -march=x86-64 \
 			-pipe -nostdlib -ffreestanding -DVERSION=\"$(KERNEL_VERSION)\"
 
-REALMODE_CFLAGS = $(OS_CFLAGS)
+REALMODE_CFLAGS = $(OS_CFLAGS) -mcmodel=kernel -m16
 LIBOS_CFLAGS = $(OS_CFLAGS) -D__userland  $(LIBOS_IVARS) $(LIBOSCFLAGS)
 OS_CFLAGS += \
 			-fno-stack-protector \
@@ -114,8 +114,6 @@ D_IVARS = -I$(KERNELDIR)/util/d/runtime
 
 all: clean build run
 
-16BIT_CFLAGS = -m16
-REALMODE_CFLAGS +=  $(16BIT_CFLAGS)
 clean:
 	-rm $(BIN)/*.o
 	-rm $(BIN)/*.bin
@@ -125,7 +123,7 @@ build:
 	$(MAKE) $(OBJECTS_UTIL)
 	$(MAKE) $(D_OBJECTS)
 	$(MAKE) $(OBJECTS_32BIT)
-	# $(MAKE) $(OBJECTS_REALMODE)
+	$(MAKE) $(OBJECTS_REALMODE)
 	$(MAKE) $(OBJECTS_LIBOS)
 	$(MAKE) together
 
@@ -150,9 +148,9 @@ $(D_OBJECTS): $(BIN)%.o : $(KERNELDIR)/util/d/%.d
 $(OBJECTS_32BIT): $(BIN)/%.o : $(KERNELDIR)/32bit/%.c
 	$(CC) $(OS_CFLAGS) -c $< -o $@
 
-#$(OBJECTS_REALMODE): $(BIN)/%.o : $(KERNELDIR)/16bit/%.c
-#	$(CC) $(REALMODE_CFLAGS) -c $< -o $@
-#	$(PREFIX)objcopy -O elf64-x86-64 -I elf32-x86-64 $@ $@
+$(OBJECTS_REALMODE): $(BIN)/%.o : $(KERNELDIR)/16bit/%.c
+	$(CC) $(REALMODE_CFLAGS) -c $< -o $@
+	$(PREFIX)objcopy -O elf64-x86-64 -I elf32-x86-64 $@ $@
 
 $(OBJECTS_LIBOS): $(BIN)/%.o : $(LIBOSDIR)/apps/%.c
 	$(CC) $(LIBOS_CFLAGS) -c $< -o $@
@@ -162,10 +160,10 @@ together:
 	ld -o $(BIN)/boot.bin $(BIN)/boot.o \
 		--oformat binary -e start -melf_x86_64 -ffreestanding -shared -Ttext 0x7c00
 	$(LD) $(OS_LDFLAGS) -o $(BIN)/full_kernel.bin -Ttext 0x1000 \
-	$(BIN)/kernel_entry.o $(BIN)/kernel.o $(BIN)/isr.o $(BIN)/idt-asm.o \
+		$(BIN)/kernel_entry.o $(OBJECTS_REALMODE) \
+		$(BIN)/kernel.o $(BIN)/isr.o $(BIN)/idt-asm.o \
 		$(BIN)/gdt-asm.o $(OBJECTS_UTIL) $(OBJECTS_32BIT) $(OBJECTS_LIBOS) \
 		$(D_OBJECTS) --oformat binary
-	#$(OBJECTS_REALMODE)
 	@cat $(BIN)/boot.bin $(BIN)/full_kernel.bin $(BIN)/zeroes.bin > $(BIN)/OS.bin
 
 run:
