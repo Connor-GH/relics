@@ -13,7 +13,7 @@
  * amount of assembly and machine-specific
  * code, but there also won't be stdint
  * types :) */
-#ifdef __X86_64__
+#if defined(__X86_64__) || defined(__i386__)
 typedef char int8_t;
 typedef short int16_t;
 typedef int int32_t;

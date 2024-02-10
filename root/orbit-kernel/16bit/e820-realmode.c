@@ -1,31 +1,37 @@
 #include <typedefs.h>
 #include <kio-realmode.h>
 #include <e820-realmode.h>
+#include <orbit-kernel/orbit.h>
 
 // TODO file unused
 static SMAP_entry_t *entries_buffer = 0;
-static SMAP_entry_t *smap = (SMAP_entry_t *)0x1000;
+static SMAP_entry_t *smap = (SMAP_entry_t *)0x45000;
 static const int smap_size = 0x2000;
 
 static void
 setMemMap(SMAP_entry_t *buf)
 {
+	CODE16;
 	entries_buffer = buf;
 }
 SMAP_entry_t *
 getMemMap(void)
 {
+	CODE16;
 	return entries_buffer;
 }
 // load memory map to buffer - note: regparm(3) avoids stack issues with gcc in real mode
 static int __attribute__((noinline)) __attribute__((regparm(3)))
 detectMemory(int maxentries)
 {
+	CODE16;
 	uint32_t contID = 0;
 	int entries = 0, signature = 0, bytes = 0;
-	//#if 0
+#if 0
 	do {
-		__asm__ __volatile__("int  $0x15"
+		__asm__ __volatile__(
+				".code16\t\n"
+				"int  $0x15"
 							 : "=a"(signature), "=c"(bytes), "=b"(contID)
 							 : "a"(0xE820), /* eax value */
 							   "b"(contID), /* continuous address value */
@@ -69,15 +75,16 @@ detectMemory(int maxentries)
 		realmode_printk("\n");
 	} while (contID != 0 && entries < maxentries);
 	setMemMap(smap);
-	//#endif
+#endif
 	return entries;
 }
 
 void
 memory_map(void)
 {
+	CODE16;
+	ASM("cli");
 	realmode_init_vga(WHITE, BLUE);
-	realmode_reset_video_memory();
 
 	int entry_count = detectMemory(smap_size / sizeof(SMAP_entry_t));
 
@@ -87,5 +94,6 @@ memory_map(void)
 	} else {
 		realmode_printk("Memory Map has been successfully parsed!\n");
 		realmode_printk("Entry count: %d\n", entry_count);
+		__asm__ __volatile__("hlt\t\n");
 	}
 }

@@ -23,15 +23,13 @@
 	do {                                                    \
 	} while (0)
 
-
-int ATTR(noreturn)
-init_kernel(void);
+int ATTR(noreturn) init_kernel(void);
 // TODO complete safe_println
 extern void
 safe_println(const char *fmt, ...);
 
-int ATTR(noreturn)
-init_kernel(void)
+int
+ATTR(noreturn) init_kernel(void)
 {
 	ASM(".code64\t\n");
 	/*
@@ -124,5 +122,5 @@ init_kernel(void)
 	}
 	//relics_shell("> ");
 
-//	return 0;
+	//	return 0;
 }

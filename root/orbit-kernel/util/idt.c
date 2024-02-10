@@ -11,16 +11,22 @@
 	extern void isr_stub(void); \
 	idt_install_handler(isr_stub, n)
 
-#define PRETTY_PRINT_INT(x) printk("%s: %lu (%x)\n", #x, x, x); do{}while(0)
-static void ATTR(noreturn) panic_irq(const char *string) {
+#define PRETTY_PRINT_INT(x)             \
+	printk("%s: %lu (%x)\n", #x, x, x); \
+	do {                                \
+	} while (0)
+static void
+ATTR(noreturn) panic_irq(const char *string)
+{
 	printk(string);
 	ASM("cli; hlt\t\n");
-	UNREACHABLE();
+	UNREACHABLE;
 }
 
 extern uint64_t isr_stub_table[];
 extern uint64_t irq_stub_table[];
-extern uint16_t ret_gdt_offset(void);
+extern uint16_t
+ret_gdt_offset(void);
 
 typedef struct {
 	uint16_t limit; // limit; must be size of IDT descriptors - 1
@@ -28,17 +34,21 @@ typedef struct {
 } __attribute__((packed)) idtr_t;
 static idtr_t idtr;
 
-extern void idt_reload(idtr_t *reg);
+extern void
+idt_reload(idtr_t *reg);
 
 static volatile uint64_t timer_ticks = 0;
 
-static void (*irq_handlers[IDT_MAX_DESCRIPTORS])(regs_t *) = {0};
-static void irq_install_handler(int irq, void (*handler)(regs_t *r)) {
+static void (*irq_handlers[IDT_MAX_DESCRIPTORS])(regs_t *) = { 0 };
+static void
+irq_install_handler(int irq, void (*handler)(regs_t *r))
+{
 	irq_handlers[irq] = handler;
 }
 
-static void decipher_error_code(uint64_t error_code) {
-
+static void
+decipher_error_code(uint64_t error_code)
+{
 	printk("This error code was caused for the following reasons: \n");
 	if (error_code % 2 != 0) {
 		printk("- happened due to external hardware (outside of processor)\n");
@@ -47,11 +57,20 @@ static void decipher_error_code(uint64_t error_code) {
 
 	// 0b11 in binary
 	switch ((error_code >> 1) & 3) {
-		case 0: printk("GDT (0b00)\n"); break;
-		case 1: printk("IDT (0b01)\n"); break;
-		case 2: printk("LDT (0b10)\n"); break;
-		case 3: printk("IDT (0b11)\n"); break;
-		default: break;
+	case 0:
+		printk("GDT (0b00)\n");
+		break;
+	case 1:
+		printk("IDT (0b01)\n");
+		break;
+	case 2:
+		printk("LDT (0b10)\n");
+		break;
+	case 3:
+		printk("IDT (0b11)\n");
+		break;
+	default:
+		break;
 	}
 	printk("In the index: %lu\n", (error_code & 0x0000FFFF) >> 3);
 }
@@ -59,7 +78,7 @@ static void decipher_error_code(uint64_t error_code) {
 typedef struct {
 	uint16_t isr_low; // The lower 16 bits of the ISR's address
 	uint16_t kernel_cs; // The GDT segment selector that the CPU will load into
-						// CS before calling the ISR
+		// CS before calling the ISR
 	struct idt_bits {
 		uint16_t ist : 3, zero : 5, type : 5, dpl : 2, p : 1;
 	} __attribute__((packed)) bits;
@@ -69,7 +88,7 @@ typedef struct {
 	uint32_t reserved; // Set to zero
 } __attribute__((packed)) idt_entry_t; // idt descriptor
 
-static idt_entry_t idt[IDT_MAX_DESCRIPTORS] = {0}; /* Create an array of
+static idt_entry_t idt[IDT_MAX_DESCRIPTORS] = { 0 }; /* Create an array of
 													  IDT entries; aligned
 													  for performance */
 
@@ -128,7 +147,6 @@ exception_handler(regs_t *r)
 	}
 }
 
-
 static void
 idt_set_descriptor(uint8_t vector, uintptr_t isr, ATTR(unused) uint8_t ist)
 {
@@ -150,7 +168,6 @@ idt_set_descriptor(uint8_t vector, uintptr_t isr, ATTR(unused) uint8_t ist)
 	idt_reload(&idtr);
 }
 
-
 static void
 sanity_check_all_structures(void)
 {
@@ -160,7 +177,6 @@ sanity_check_all_structures(void)
 	if ((sizeof(idt[0]) * 8) != 128)
 		panic_irq("ERROR: idt_entry_t: not correct size\n");
 }
-
 
 void
 enable_interrupts(void)
@@ -184,7 +200,9 @@ timer_handler(ATTR(unused) regs_t *r)
 {
 	timer_ticks++;
 }
-static void spurious_interrupt(ATTR(unused) regs_t *r) {
+static void
+spurious_interrupt(ATTR(unused) regs_t *r)
+{
 	ASM("nop");
 	ASM("nop");
 	ASM("nop");
@@ -232,13 +250,12 @@ idt_init(void)
 	memset(idt, 0, sizeof(idt_entry_t) * IDT_MAX_DESCRIPTORS - 1);
 
 	for (uint8_t vector = 0; vector < 32; vector++) {
-		idt_set_descriptor(vector, isr_stub_table[vector],
-				TSS_IST_EXCEPTION);
+		idt_set_descriptor(vector, isr_stub_table[vector], TSS_IST_EXCEPTION);
 	}
 
 	for (uint8_t vector = 32; vector < 47; vector++) {
 		idt_set_descriptor(vector, irq_stub_table[vector - 32],
-				TSS_IST_EXCEPTION);
+						   TSS_IST_EXCEPTION);
 	}
 	fill_irq_table();
 	PIC_enable();

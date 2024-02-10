@@ -4,5 +4,6 @@ struct gdt_ptr {
 	uint16_t limit;
 	uintptr_t base;
 } __attribute__((packed));
-void gdt_init(void);
+void
+gdt_init(void);
 #endif /* GDT_H */

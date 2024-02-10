@@ -75,7 +75,7 @@ realmode_clear_vga_buffer(uint16_t **buffer, uint8_t fore_color,
 void
 realmode_reset_video_memory(void)
 {
-	vga_buffer = (uint16_t *)0xB8000;
+	vga_buffer = (uint16_t *)VIDEO_MEMORY;
 	realmode_clear_vga_buffer(&vga_buffer, g_fore_color, g_back_color);
 	vga_index = 0;
 	next_line_index = 1;
@@ -102,10 +102,7 @@ realmode_init_vga(uint8_t fore_color, uint8_t back_color)
 {
 	g_fore_color = fore_color;
 	g_back_color = back_color;
-	vga_buffer =
-		(uint16_t *)VIDEO_MEMORY; //point vga_buffer pointer to VIDEO_MEMORY
-	realmode_clear_vga_buffer(&vga_buffer, fore_color,
-							  back_color); //clear buffer
+	realmode_reset_video_memory();
 }
 
 static void

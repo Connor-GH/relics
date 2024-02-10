@@ -36,9 +36,9 @@ has_fpu(void)
 	}
 
 	__asm__ __volatile__("fninit\t\n"
-	 	"fnstsw %0\t\n"
-		"fnstcw %1\t\n"
-	 	: "+m"(fsw), "+m"(fcw));
+						 "fnstsw %0\t\n"
+						 "fnstcw %1\t\n"
+						 : "+m"(fsw), "+m"(fcw));
 
 	return fsw == 0 && (fcw & 0x103f) == 0x003f;
 }
@@ -57,13 +57,13 @@ has_eflag(unsigned long mask)
 	unsigned long f0 = 0, f1 = 0;
 
 	__asm__ __volatile__(PUSHF "    \n\t" PUSHF "    \n\t"
-		   "pop %0    \n\t"
-		   "mov %0,%1 \n\t"
-		   "xor %2,%1 \n\t"
-		   "push %1   \n\t" POPF " \n\t" PUSHF "    \n\t"
-		   "pop %1    \n\t" POPF
-	 : "=&r"(f0), "=&r"(f1)
-	 : "ri"(mask));
+							   "pop %0    \n\t"
+							   "mov %0,%1 \n\t"
+							   "xor %2,%1 \n\t"
+							   "push %1   \n\t" POPF " \n\t" PUSHF "    \n\t"
+							   "pop %1    \n\t" POPF
+						 : "=&r"(f0), "=&r"(f1)
+						 : "ri"(mask));
 
 	return !!((f0 ^ f1) & mask);
 }
@@ -71,9 +71,9 @@ void
 cpuid_call(u32 id, u32 cnt, u32 *a, u32 *b, u32 *c, u32 *d)
 {
 	__asm__ __volatile__("movl $0, %%eax\t\n"
-	 "cpuid\t\n"
-	 : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d)
-	 : "0"(id), "2"(cnt));
+						 "cpuid\t\n"
+						 : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d)
+						 : "0"(id), "2"(cnt));
 }
 
 static int

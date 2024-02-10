@@ -12,11 +12,7 @@ static uint16_t vga_index = 0;
 static uint16_t next_line_index = 1;
 // fore & back color values
 static uint8_t g_fore_color = WHITE, g_back_color = BLACK;
-enum {
-	VGA_LENGTH = 25,
-	VGA_WIDTH = 80,
-	KIO_TABSIZE = 4
-};
+enum { VGA_LENGTH = 25, VGA_WIDTH = 80, KIO_TABSIZE = 4 };
 union double_int64_convert {
 	double d;
 	uint64_t i;
@@ -166,7 +162,6 @@ putchark(int c)
 		print_char((char)c);
 		return 0;
 	}
-
 }
 
 static uint32_t

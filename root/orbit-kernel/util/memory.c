@@ -16,7 +16,7 @@ static size_t mem_bytes = END_OF_MEM - MEMSTART; // bytes of memory available
 
 struct mem_page {
 	enum MEM_PAGE usable; // = MEM_USABLE;
-	uint32_t padding: 32;
+	uint32_t padding : 32;
 	void *beginning_ptr;
 	void *end_ptr;
 };
