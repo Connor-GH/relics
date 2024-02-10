@@ -32,16 +32,34 @@ OBJECTS_LIBOS := $(SOURCES_LIBOS:$(LIBOSDIR)/apps/%.c=$(BIN)/%.o)
 
 D_OBJECTS := $(D_SOURCES:$(KERNELDIR)/util/d/%.d=$(BIN)/%.o)
 
-OS_CFLAGS = -std=$(STD) -O0 -march=x86-64 \
-			-pipe -nostdlib -ffreestanding -DVERSION=\"$(KERNEL_VERSION)\"
+ZERO_STACK_PROTECTION = \
+						$(call cc-option,-fcf-protection=none) \
+						-fno-strict-aliasing -fno-stack-protector \
+						-fomit-frame-pointer -fno-pic -fno-PIC
+COMMON_OS_CFLAGS = -std=$(STD) -O0  \
+			-pipe -nostdlib -ffreestanding -DVERSION=\"$(KERNEL_VERSION)\" \
+			$(KERNEL_IVARS) $(ZERO_STACK_PROTECTION)
 
-REALMODE_CFLAGS = $(OS_CFLAGS) -mcmodel=kernel -m16
-LIBOS_CFLAGS = $(OS_CFLAGS) -D__userland  $(LIBOS_IVARS) $(LIBOSCFLAGS)
-OS_CFLAGS += \
-			-fno-stack-protector \
+ifneq ($(call cc-option, -mpreferred-stack-boundary=4),)
+      stack_align4 := -mpreferred-stack-boundary=2
+      stack_align8 := -mpreferred-stack-boundary=3
+else ifneq ($(call cc-option, -mstack-alignment=16),)
+      stack_align4 := -mstack-alignment=4
+      stack_align8 := -mstack-alignment=8
+ endif
+
+ifeq ($(CC), cc)
+	CC=clang
+endif
+
+REALMODE_CFLAGS = $(COMMON_OS_CFLAGS) -D__WORDSSIZE__=32 -m16 -mregparm=3 -march=i386 \
+				  -mno-mmx -mno-sse $(stack_align4)
+LIBOS_CFLAGS = $(COMMON_OS_CFLAGS) -D__userland  $(LIBOS_IVARS) $(LIBOSCFLAGS) \
+			   $(IVARS)
+OS_CFLAGS = $(COMMON_OS_CFLAGS) -march=x86-64 \
 			-mno-red-zone $(KERNEL_IVARS) -mno-avx \
 			-mno-sse -mno-3dnow -mcmodel=kernel --sysroot=$(SYSROOT) \
-			-D__kernel -fno-PIC -DKERNEL_LOG $(KCFLAGS)
+			-D__kernel -DKERNEL_LOG $(KCFLAGS)
 OS_LDFLAGS = -nostdlib -z max-page-size=0x1000 $(LDFLAGS) $(KLDFLAGS)
 
 ifeq ($(FEATURE_FLAGS),)
@@ -60,18 +78,15 @@ endif
 ifeq ($(CC), clang)
 	CC	= clang
 	LD 	= ld.lld
-
 	WEXTRA = -Weverything
 	PREFIX=llvm-
-	REALMODE_CFLAGS += -target i386-none-elf
-
+	#REALMODE_CFLAGS += -target i386-none-elf -mcmodel=kernel
 endif
 ifeq ($(CC), cc)
 	CC	= clang
 	LD 	= ld.lld
 	WEXTRA = -Weverything
-	REALMODE_CFLAGS += -target i386-none-elf
-
+	#REALMODE_CFLAGS += -target i386-none-elf -mcmodel=kernel
 endif
 ifeq ($(CC), gcc)
 	CC = gcc
@@ -79,7 +94,7 @@ ifeq ($(CC), gcc)
 	# Hack to get ld to link the OS in a decent size.
 	# Without it, the output executable is 14MB.
 	OS_LDFLAGS += -shared -no-pie
-	REALMODE_CFLAGS += -mcmodel=32 -Wl,-b,elf32-i386
+	#REALMODE_CFLAGS += -mcmodel=32 # -Wl,-b,elf32-i386 # -mcmodel=32
 endif
 
 
@@ -87,11 +102,13 @@ ifeq ($(BITS), 32)
 	OS_CFLAGS += -D__WORDSIZE__=32
 	OS_CFLAGS += -D__i686__ -D__i386__
 ifeq ($(CC), clang)
-	OS_CFLAGS += -target i686-none-elf
+	 OS_CFLAGS += -target i686-none-elf
 endif
 else
 	OS_CFLAGS += -D__WORDSIZE__=64
+	LIBOS_CFLAGS += -D__WORDSIZE__=64
 	OS_CFLAGS += -D__X86_64__
+	LIBOS_CFLAGS += -D__X86_64__
 ifeq ($(CC), clang)
 	OS_CFLAGS += -target x86_64-none-elf
 endif
@@ -123,7 +140,7 @@ build:
 	$(MAKE) $(OBJECTS_UTIL)
 	$(MAKE) $(D_OBJECTS)
 	$(MAKE) $(OBJECTS_32BIT)
-	$(MAKE) $(OBJECTS_REALMODE)
+	#$(MAKE) $(OBJECTS_REALMODE)
 	$(MAKE) $(OBJECTS_LIBOS)
 	$(MAKE) together
 
@@ -160,10 +177,11 @@ together:
 	ld -o $(BIN)/boot.bin $(BIN)/boot.o \
 		--oformat binary -e start -melf_x86_64 -ffreestanding -shared -Ttext 0x7c00
 	$(LD) $(OS_LDFLAGS) -o $(BIN)/full_kernel.bin -Ttext 0x1000 \
-		$(BIN)/kernel_entry.o $(OBJECTS_REALMODE) \
+		$(BIN)/kernel_entry.o \
 		$(BIN)/kernel.o $(BIN)/isr.o $(BIN)/idt-asm.o \
 		$(BIN)/gdt-asm.o $(OBJECTS_UTIL) $(OBJECTS_32BIT) $(OBJECTS_LIBOS) \
 		$(D_OBJECTS) --oformat binary
+		# $(OBJECTS_REALMODE)
 	@cat $(BIN)/boot.bin $(BIN)/full_kernel.bin $(BIN)/zeroes.bin > $(BIN)/OS.bin
 
 run:
