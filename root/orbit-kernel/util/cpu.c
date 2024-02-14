@@ -106,10 +106,10 @@ has_sse(void)
 		return 0;
 	}
 }
-__attribute__((optnone)) void
-test_fpu(int a, int b)
+void
+test_fpu(volatile int a, volatile int b)
 {
-	float k = (float)a / (float)b;
+	volatile float k = (volatile float)a / (volatile float)b;
 	printk("%d\n", (int)k);
 }
 

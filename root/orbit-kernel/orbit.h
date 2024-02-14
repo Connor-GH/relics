@@ -20,7 +20,10 @@
 #if defined(__has_builtin) && __has_builtin(__builtin_unreachable)
 #define UNREACHABLE __builtin_unreachable()
 #else
-#define UNREACHABLE volatile char UB = *((char *)0); do{}while(0)
+#define UNREACHABLE                  \
+	volatile char UB = *((char *)0); \
+	do {                             \
+	} while (0)
 #endif
 
 #define CODE16 ASM(".code16\t\n")

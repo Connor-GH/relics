@@ -129,7 +129,10 @@ LIBOS_CFLAGS += $(_CFLAGS)
 OS_LDFLAGS += $(_LFLAGS)
 D_IVARS = -I$(KERNELDIR)/util/d/runtime
 
-all: clean build run
+all:
+	$(MAKE) clean
+	$(MAKE) build
+	$(MAKE) run
 
 clean:
 	-rm $(BIN)/*.o
