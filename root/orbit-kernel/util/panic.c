@@ -8,8 +8,7 @@
 	 "The system will now go into an infinite loop.\n" \
 	 "Please restart the system through hardware.")
 
-ATTR(noreturn) void
-panic2(int i, const char *errmsg)
+ATTR(noreturn) void panic2(int i, const char *errmsg)
 {
 	const char *issue;
 	switch (i) {
@@ -39,7 +38,7 @@ panic2(int i, const char *errmsg)
 	}
 }
 
-ATTR(noreturn) void
-panic(int i) {
+ATTR(noreturn) void panic(int i)
+{
 	panic2(i, ERR_MSG_DEFAULT);
 }

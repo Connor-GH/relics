@@ -79,11 +79,9 @@ ATTR(noreturn) init_kernel(void)
 	enable_interrupts();
 	get_mem_map();
 
-
 	safe_println("this");
 	for (;;) {
 		__asm__ __volatile__("hlt");
 	}
 	//relics_shell("> ");
-
 }

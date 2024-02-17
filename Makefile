@@ -33,7 +33,7 @@ D_OBJECTS := $(D_SOURCES:$(KERNELDIR)/util/d/%.d=$(BIN)/%.o)
 ZERO_STACK_PROTECTION = \
 						$(call cc-option,-fcf-protection=none) \
 						-fno-strict-aliasing -fno-stack-protector \
-						-fomit-frame-pointer -fno-PIC #-fno-pic -fno-PIC
+						-fomit-frame-pointer -fno-PIC
 COMMON_OS_CFLAGS = -std=$(STD) -O0  \
 			-pipe -nostdlib -ffreestanding -DVERSION=\"$(KERNEL_VERSION)\" \
 			$(KERNEL_IVARS) $(ZERO_STACK_PROTECTION)

@@ -3,7 +3,9 @@
 #include <inttypes.h>
 #include <kio.h>
 
-static const char *e820_type_human_name(uint32_t type) {
+static const char *
+e820_type_human_name(uint32_t type)
+{
 	switch (type) {
 	case E820_TYPE_USABLE:
 		return "usable";
@@ -22,16 +24,19 @@ static const char *e820_type_human_name(uint32_t type) {
 	}
 }
 
-static void iterate_over_map(uint32_t count, struct e820_map_64 *map) {
+static void
+iterate_over_map(uint32_t count, struct e820_map_64 *map)
+{
 	for (size_t i = 0; i < count; i++) {
 		log_printk("%lx-%lx %s\n", map[i].baseaddr,
-				map[i].baseaddr+map[i].length,
-				e820_type_human_name(map[i].type));
+				   map[i].baseaddr + map[i].length,
+				   e820_type_human_name(map[i].type));
 	}
 }
 
-void get_mem_map(void) {
-
+void
+get_mem_map(void)
+{
 	uint32_t *e820_entry_count = (uint32_t *)0x496;
 	if (*e820_entry_count > E820_MAX_ENTRIES)
 		panic2(GENERIC_ISSUE, "Too many E820 entries!");
