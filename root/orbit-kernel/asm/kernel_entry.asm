@@ -3,11 +3,71 @@
 .set KERNEL_LOCATION, 0x1000
 .code16
 
-#cli
-#mov esp, 0x90000
-#mov ebp, esp
-#.extern memory_map
-#call memory_map
+.macro print_char char
+mov eax, 0xb8000
+mov ah, 0x0E
+mov bh, 0
+mov al, \char\()
+int 0x10
+.endm
+
+#mov sp, 0x8000
+#mov bp, sp
+print_char '#'
+
+.set E820_SMAP_SIZE, 0x1000
+.set SMAP_SIGNATURE, 0x534D4150 # 'SMAP'
+.set SMAP_ADDRESS, 0x500 # TODO extremely sketchy
+.set SMAP_SIZE, 20
+e820_setup:
+mov bx, 0 # initial call needs this set to zero
+mov es, bx # make sure segment is 0, makes math easier
+mov di, SMAP_ADDRESS # for es:di addressing
+clc # clear carry flag
+
+mov si, 0 # clear counter
+
+loop:
+mov ax, 0xE820 # function code
+# continuation is here
+# di is set as a pointer
+mov cx, SMAP_SIZE
+mov edx, SMAP_SIGNATURE # edx is the signature
+int 0x15
+jc out # some BIOSes terminate through carry flag
+
+cmp eax, SMAP_SIGNATURE
+jne error_sig
+
+cmp cx, SMAP_SIZE
+jl error_size
+
+inc si
+
+cmp bx, 0
+je out
+
+add di, cx
+
+print_char '>'
+jmp loop
+
+out:
+mov [0x496], si
+jmp continue
+
+error_sig:
+print_char 'S'
+cli
+hlt
+
+error_size:
+print_char 's'
+cli
+hlt
+
+
+continue:
 # ds is uninitialized. lgdt uses ds as its segment so let's init it
 xor ax,ax
 mov ds,ax
@@ -21,6 +81,7 @@ mov cr0, eax
 .set GDT_BOOT_CS_OFFSET, (GDT_BOOT_CS - GDT)
 .set GDT_BOOT_DS_OFFSET, (GDT_BOOT_DS - GDT)
 jmp GDT_BOOT_CS_OFFSET:protmode # jump using our new code segment from the gdt to set cs
+
 s:
 jmp s
 hlt
@@ -171,9 +232,8 @@ hang:
 pause
 jmp hang
 
-
 .section .data
-.align 4
+.code32
 GDT_PTR:
 .word GDT_END-GDT-1
 .long GDT # offset
@@ -218,6 +278,7 @@ GDT64:
     .GDT64_PTR:
         .word . - GDT64 - 1
         .quad GDT64*/
+.code64
 GDT64:
 .GDT64_NULL: .quad 0
 .GDT_CS64: .quad 0b0000000000100000100110000000000000000000000000000000000000000000 #  0x00209A0000000000 # same as above but 64-bit

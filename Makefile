@@ -16,7 +16,6 @@ LIBOS_IVARS = -I$(SYSROOT) -I$(LIBOSDIR)
 KERNEL_VERSION = 0.0.3
 
 SOURCES_UTIL = $(wildcard $(KERNELDIR)/util/*.c)
-SOURCES_REALMODE = $(wildcard $(KERNELDIR)/16bit/*.c)
 SOURCES_LIBOS = $(LIBOSDIR)/apps/shell.c
 
 # D stuff
@@ -26,7 +25,6 @@ SOURCES_32BIT =  \
 $(KERNELDIR)/32bit/test_memory.c
 
 OBJECTS_UTIL := $(SOURCES_UTIL:$(KERNELDIR)/util/%.c=$(BIN)/%.o)
-OBJECTS_REALMODE := $(SOURCES_REALMODE:$(KERNELDIR)/16bit/%.c=$(BIN)/%.o)
 OBJECTS_32BIT := $(SOURCES_32BIT:$(KERNELDIR)/32bit/%.c=$(BIN)/%.o)
 OBJECTS_LIBOS := $(SOURCES_LIBOS:$(LIBOSDIR)/apps/%.c=$(BIN)/%.o)
 
@@ -35,7 +33,7 @@ D_OBJECTS := $(D_SOURCES:$(KERNELDIR)/util/d/%.d=$(BIN)/%.o)
 ZERO_STACK_PROTECTION = \
 						$(call cc-option,-fcf-protection=none) \
 						-fno-strict-aliasing -fno-stack-protector \
-						-fomit-frame-pointer -fno-pic -fno-PIC
+						-fomit-frame-pointer -fno-PIC #-fno-pic -fno-PIC
 COMMON_OS_CFLAGS = -std=$(STD) -O0  \
 			-pipe -nostdlib -ffreestanding -DVERSION=\"$(KERNEL_VERSION)\" \
 			$(KERNEL_IVARS) $(ZERO_STACK_PROTECTION)
@@ -52,8 +50,6 @@ ifeq ($(CC), cc)
 	CC=clang
 endif
 
-REALMODE_CFLAGS = $(COMMON_OS_CFLAGS) -D__WORDSSIZE__=32 -m16 -mregparm=3 -march=i386 \
-				  -mno-mmx -mno-sse $(stack_align4)
 LIBOS_CFLAGS = $(COMMON_OS_CFLAGS) -D__userland  $(LIBOS_IVARS) $(LIBOSCFLAGS) \
 			   $(IVARS)
 OS_CFLAGS = $(COMMON_OS_CFLAGS) -march=x86-64 \
@@ -80,13 +76,11 @@ ifeq ($(CC), clang)
 	LD 	= ld.lld
 	WEXTRA = -Weverything
 	PREFIX=llvm-
-	#REALMODE_CFLAGS += -target i386-none-elf -mcmodel=kernel
 endif
 ifeq ($(CC), cc)
 	CC	= clang
 	LD 	= ld.lld
 	WEXTRA = -Weverything
-	#REALMODE_CFLAGS += -target i386-none-elf -mcmodel=kernel
 endif
 ifeq ($(CC), gcc)
 	CC = gcc
@@ -94,7 +88,6 @@ ifeq ($(CC), gcc)
 	# Hack to get ld to link the OS in a decent size.
 	# Without it, the output executable is 14MB.
 	OS_LDFLAGS += -shared -no-pie
-	#REALMODE_CFLAGS += -mcmodel=32 # -Wl,-b,elf32-i386 # -mcmodel=32
 endif
 
 
@@ -143,7 +136,6 @@ build:
 	$(MAKE) $(OBJECTS_UTIL)
 	$(MAKE) $(D_OBJECTS)
 	$(MAKE) $(OBJECTS_32BIT)
-	#$(MAKE) $(OBJECTS_REALMODE)
 	$(MAKE) $(OBJECTS_LIBOS)
 	$(MAKE) together
 
@@ -168,23 +160,18 @@ $(D_OBJECTS): $(BIN)%.o : $(KERNELDIR)/util/d/%.d
 $(OBJECTS_32BIT): $(BIN)/%.o : $(KERNELDIR)/32bit/%.c
 	$(CC) $(OS_CFLAGS) -c $< -o $@
 
-$(OBJECTS_REALMODE): $(BIN)/%.o : $(KERNELDIR)/16bit/%.c
-	$(CC) $(REALMODE_CFLAGS) -c $< -o $@
-	$(PREFIX)objcopy -O elf64-x86-64 -I elf32-x86-64 $@ $@
-
 $(OBJECTS_LIBOS): $(BIN)/%.o : $(LIBOSDIR)/apps/%.c
 	$(CC) $(LIBOS_CFLAGS) -c $< -o $@
 
 
 together:
-	ld -o $(BIN)/boot.bin $(BIN)/boot.o \
-		--oformat binary -e start -melf_x86_64 -ffreestanding -shared -Ttext 0x7c00
+	$(LD) -o $(BIN)/boot.bin $(BIN)/boot.o \
+		--oformat binary -e _start -melf_x86_64 -Ttext 0x7c00
 	$(LD) $(OS_LDFLAGS) -o $(BIN)/full_kernel.bin -Ttext 0x1000 \
 		$(BIN)/kernel_entry.o \
 		$(BIN)/kernel.o $(BIN)/isr.o $(BIN)/idt-asm.o \
-		$(BIN)/gdt-asm.o $(OBJECTS_UTIL) $(OBJECTS_32BIT) $(OBJECTS_LIBOS) \
-		$(D_OBJECTS) --oformat binary
-		# $(OBJECTS_REALMODE)
+		$(BIN)/gdt-asm.o $(OBJECTS_UTIL) $(OBJECTS_32BIT) \
+		$(OBJECTS_LIBOS) $(D_OBJECTS) --oformat binary
 	@cat $(BIN)/boot.bin $(BIN)/full_kernel.bin $(BIN)/zeroes.bin > $(BIN)/OS.bin
 
 run:

@@ -383,6 +383,15 @@ actual_print(const char *format, va_list *argp)
 					decimal_to_base(lb, 2);
 					break;
 				}
+				case 'x': {
+					unsigned long x = va_arg(*argp, unsigned long);
+					if (x != 0) {
+						print_char('0');
+						print_char('x');
+					}
+					decimal_to_base(x, 16);
+					break;
+				}
 				default: {
 					format--;
 					break;
@@ -486,4 +495,15 @@ log_printk(const char *restrict format, ...)
 	actual_print(format, &listp);
 	va_end(listp);
 #endif
+}
+
+volatile int
+getchark(void)
+{
+	// TODO in ps2_keyboard.c:
+	// add static var that says what
+	// the last pressed char was
+	//bool state = get_char_pressed_state();
+	//while (state == get_char_pressed_state()) {
+	//}
 }

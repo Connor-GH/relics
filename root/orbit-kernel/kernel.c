@@ -1,18 +1,13 @@
 #include <stddef.h>
 #include <kio.h>
-#include <string.h>
-#include <keyboard.h>
-#include <memory.h>
-#include <32bit/include/test_memory.h>
-#include <orbit-kernel/math.h>
 #include <orbit.h>
-#include <apploader.h>
 #include <libraryOSes/relics-libOS/apps/shell.h>
 #include <cpu.h>
 #include <vga.h>
 #include <idt.h>
 #include <pic.h>
 #include <gdt.h>
+#include <e820.h>
 
 #define TRANSITION(x)                                       \
                                                             \
@@ -48,16 +43,8 @@ ATTR(noreturn) init_kernel(void)
 	gdt_init();
 	idt_init();
 
-//	__asm__ __volatile__("hlt");
 #if 0
 	test_memory();
-    /* IRQs are now set and remapped.
-     * IRQ_0x1 == ISR_0x21 */
-    /* masking IRQ 1 will allow
-     * keyboard input the "old" way
-     * until proper interrupt handling
-     * can be added for it. */
-    //IRQ_set_mask(1);
     /*
      * if running text mode,
      * only use "vga"-named
@@ -73,7 +60,6 @@ ATTR(noreturn) init_kernel(void)
     //reset_pixel_memory();
 
 
-    //test_fpu(16, 3);
 	TRANSITION(1);
 
 	init_vga(WHITE, BRIGHT_MAGENTA);
@@ -89,32 +75,10 @@ ATTR(noreturn) init_kernel(void)
 	printk("\n");
 	printk("Welcome to 64-bit long mode!\n");
 	printk("All of this was printed from the kernel!\n");
-
-	enable_interrupts();
-
-	TRANSITION(1);
-	init_vga(BRIGHT_GREEN, BLACK);
-	reset_video_memory();
-	printk("Format test:\n"
-		   "%%c: %c\n"
-		   "%%s: %s\n"
-		   "%%d: %d\n"
-		   "%%i: %i\n"
-		   "%%u: %u\n"
-		   "%%lld: %lld\n"
-		   "%%llu: %llu\n"
-		   "%%ld: %ld\n"
-		   "%%lu: %lu\n"
-		   "%%x: %x\n"
-		   "%%o: %o\n"
-		   "%%b: %b\n",
-		   //"%%f: %f\n",
-		   'b', "string", -12, 45, 3147000000, -9000000000000, 18000000000000,
-		   23, 17, 256, 4096,
-		   7897890); //,
-	//355./113);
 #endif
 	enable_interrupts();
+	get_mem_map();
+
 
 	safe_println("this");
 	for (;;) {
@@ -122,5 +86,4 @@ ATTR(noreturn) init_kernel(void)
 	}
 	//relics_shell("> ");
 
-	//	return 0;
 }

@@ -3,6 +3,7 @@
 
 void
 panic(int i);
+void panic2(int, const char *);
 
 #define CPU_ISSUE 0
 #define MEMORY_ISSUE 1

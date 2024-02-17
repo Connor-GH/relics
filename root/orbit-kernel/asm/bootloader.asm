@@ -2,12 +2,12 @@
 .intel_syntax noprefix
 .set KERNEL_LOCATION, 0x1000
 .code16
-start:
+_start:
 mov [BOOT_DISK], dl
 xor ax, ax
 mov es, ax
 mov ds, ax
-mov bp, 0xF000 # temp stack at 0x8000
+mov bp, 0x8000 # temp stack at 0x8000
 mov sp, bp
 
 mov bx, KERNEL_LOCATION
@@ -54,5 +54,5 @@ hlt
 
 
 BOOT_DISK: .byte 0
-.fill 510 - (. - start), 1, 0 # pad to 512 bytes
+.fill 510 - (. - _start), 1, 0 # pad to 512 bytes
 .word 0xAA55

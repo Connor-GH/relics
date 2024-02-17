@@ -2,10 +2,19 @@
 #include <typedefs.h>
 #include <orbit-kernel/stdbool.h>
 
-static _Bool is_shifted = false;
-static _Bool is_alted = false;
-static _Bool is_ctrled = false;
-static _Bool is_caps_locked = false;
+static bool char_pressed_state = false;
+
+void
+add_character_pressed(void)
+{
+	char_pressed_state = !char_pressed_state;
+}
+
+static bool is_shifted = false;
+static bool is_alted = false;
+static bool is_ctrled = false;
+static bool is_caps_locked = false;
+
 char
 to_character(uint8_t scan_code)
 {

@@ -1,14 +1,15 @@
 #include <stddef.h>
 #include <kio.h>
 #include <panic.h>
+#include <orbit.h>
 
-#define ERR_MSG                                        \
-	(" unrecoverable error has occurred.\n"            \
+#define ERR_MSG_DEFAULT                                \
+	("An unrecoverable error has occurred.\n"          \
 	 "The system will now go into an infinite loop.\n" \
-	 "Please restart the system through hardware.\n")
+	 "Please restart the system through hardware.")
 
-__attribute__((noreturn)) void
-panic(int i)
+ATTR(noreturn) void
+panic2(int i, const char *errmsg)
 {
 	const char *issue;
 	switch (i) {
@@ -30,11 +31,15 @@ panic(int i)
 		break;
 	}
 
-	printk("A %s unrecoverable error has occurred.\n"
-		   "The system will now go into an infinite loop.\n"
-		   "Please restart the system through hardware.\n",
-		   issue);
+	printk("%s\n", errmsg);
+	printk("Error code: %d (%s)\n", i, issue);
 
 	while (1) {
+		ASM("cli; hlt");
 	}
+}
+
+ATTR(noreturn) void
+panic(int i) {
+	panic2(i, ERR_MSG_DEFAULT);
 }

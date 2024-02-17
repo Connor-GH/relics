@@ -27,4 +27,6 @@
 #endif
 
 #define CODE16 ASM(".code16\t\n")
+#define CODE32 ASM(".code32\t\n")
+#define CODE64 ASM(".code64\t\n")
 #endif /* ORBIT_H */
