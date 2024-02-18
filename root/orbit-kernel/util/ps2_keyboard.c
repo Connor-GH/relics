@@ -3,11 +3,24 @@
 #include <orbit-kernel/stdbool.h>
 
 static bool char_pressed_state = false;
+static char most_recent_char = '\0';
 
 void
 add_character_pressed(void)
 {
 	char_pressed_state = !char_pressed_state;
+}
+void
+add_most_recent_char(char c)
+{
+	most_recent_char = c;
+}
+char
+get_most_recent_char(void)
+{
+	char tmp = most_recent_char;
+	most_recent_char = '\0'; // invalidate most recent char
+	return tmp;
 }
 
 static bool is_shifted = false;

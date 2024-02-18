@@ -4,6 +4,7 @@
 #include <irq.h>
 #include <cpu.h>
 #endif
+#include <ps2_keyboard.h>
 
 static uint16_t *vga_buffer;
 
@@ -488,9 +489,11 @@ log_printk(const char *restrict format, ...)
 #ifdef KERNEL_LOG
 	va_list listp;
 	va_start(listp, format);
+#ifdef __SSE_enabled
 	if (cpu_features.sse == 1)
 		printk("[%f] ", PIT_IRQ_timer_get_current_time_since_boot());
 	else
+#endif
 		printk("[0.00000] ");
 	actual_print(format, &listp);
 	va_end(listp);
@@ -500,10 +503,11 @@ log_printk(const char *restrict format, ...)
 int
 getchark(void)
 {
-	// TODO in ps2_keyboard.c:
-	// add static var that says what
-	// the last pressed char was
-	//bool state = get_char_pressed_state();
-	//while (state == get_char_pressed_state()) {
-	//}
+	/* keep waiting to get a char until
+	 * one comes in, then grab it */
+	char c = get_most_recent_char();
+	while (c == '\0') {
+		c = get_most_recent_char();
+	}
+	return c;
 }

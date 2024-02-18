@@ -41,8 +41,12 @@ reset_video_memory(void);
 void
 init_pixel_mode(void);
 
+/* output */
 void
 printk(const char *restrict format, ...);
 void
 log_printk(const char *restrict format, ...);
+
+/* input */
+int getchark(void);
 #endif

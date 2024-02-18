@@ -196,7 +196,8 @@ kbd_irq_handler(ATTR(unused) regs_t *r)
 {
 	unsigned char scan_code = inb(0x60);
 	add_character_pressed();
-	printk("%c", to_character(scan_code));
+	//printk("%c", to_character(scan_code));
+	add_most_recent_char(to_character(scan_code));
 }
 static void
 timer_handler(ATTR(unused) regs_t *r)

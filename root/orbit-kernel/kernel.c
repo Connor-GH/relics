@@ -80,11 +80,12 @@ ATTR(noreturn) init_kernel(void)
 	enable_interrupts();
 	get_mem_map();
 	reprogram_timer(1000); // tick every ms
+	printk("Sleeping for one second!\n");
 	millisleep(1000);
 
 	safe_println("this");
+	relics_shell("> ");
 	for (;;) {
 		__asm__ __volatile__("hlt");
 	}
-	//relics_shell("> ");
 }
