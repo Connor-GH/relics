@@ -6,6 +6,7 @@
 <img src="pictures/screen3.png" align="right">
 
 - builds in 0.1 sec with a 16-thread Ryzen 5700G
+- can run on as little as 1033K of ram as of commit b8a7ca9f212b2dfad0eadf5f07625d7e21414d5f
 
 download with:
 

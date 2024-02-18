@@ -80,6 +80,7 @@ mov cr0, eax
 
 .set GDT_BOOT_CS_OFFSET, (GDT_BOOT_CS - GDT)
 .set GDT_BOOT_DS_OFFSET, (GDT_BOOT_DS - GDT)
+
 jmp GDT_BOOT_CS_OFFSET:protmode # jump using our new code segment from the gdt to set cs
 
 s:
@@ -96,7 +97,7 @@ mov es, ax
 mov fs, ax
 mov gs, ax
 mov esp, 0x90000 # tmp stack.
-mov ebp, esp # swapped s, b
+mov ebp, esp
 
 cld
 call check_multiboot

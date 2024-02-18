@@ -6,6 +6,7 @@
 #include <vga.h>
 #include <idt.h>
 #include <pic.h>
+#include <pit.h>
 #include <gdt.h>
 #include <e820.h>
 
@@ -78,6 +79,8 @@ ATTR(noreturn) init_kernel(void)
 #endif
 	enable_interrupts();
 	get_mem_map();
+	reprogram_timer(1000); // tick every ms
+	millisleep(1000);
 
 	safe_println("this");
 	for (;;) {

@@ -1,4 +1,5 @@
 CC = gcc
+AS ?= gcc -c
 LTO = -flto -fno-fat-lto-objects
 BINUTILS_PREFIX =
 

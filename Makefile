@@ -58,6 +58,7 @@ OS_CFLAGS = $(COMMON_OS_CFLAGS) -march=x86-64 \
 			-D__kernel -DKERNEL_LOG $(KCFLAGS)
 OS_LDFLAGS = -nostdlib -z max-page-size=0x1000 $(LDFLAGS) $(KLDFLAGS)
 
+
 ifeq ($(FEATURE_FLAGS),)
 FEATURE_FLAGS = none
 endif
@@ -121,6 +122,7 @@ OS_CFLAGS += $(_CFLAGS)
 LIBOS_CFLAGS += $(_CFLAGS)
 OS_LDFLAGS += $(_LFLAGS)
 D_IVARS = -I$(KERNELDIR)/util/d/runtime
+OS_AFLAGS = $(AFLAGS)
 
 all:
 	$(MAKE) clean
@@ -131,7 +133,7 @@ clean:
 	-rm $(BIN)/*.o
 	-rm $(BIN)/*.bin
 build:
-	$(MAKE) boot
+	$(MAKE) assembly
 	$(MAKE) kernel
 	$(MAKE) $(OBJECTS_UTIL)
 	$(MAKE) $(D_OBJECTS)
@@ -139,12 +141,12 @@ build:
 	$(MAKE) $(OBJECTS_LIBOS)
 	$(MAKE) together
 
-boot:
-	as --64 $(KERNELDIR)/asm/bootloader.asm -o $(BIN)/boot.o --mx86-used-note=no
-	as --64 $(KERNELDIR)/asm/kernel_entry.asm -o $(BIN)/kernel_entry.o --mx86-used-note=no
-	as --64 $(KERNELDIR)/util/isr.asm -o $(BIN)/isr.o --mx86-used-note=no
-	as --64 $(KERNELDIR)/util/idt.asm -o $(BIN)/idt-asm.o --mx86-used-note=no
-	as --64 $(KERNELDIR)/util/gdt.S -o $(BIN)/gdt-asm.o --mx86-used-note=no
+assembly:
+	$(AS) $(OS_AFLAGS) $(KERNELDIR)/asm/bootloader.S -o $(BIN)/boot.o
+	$(AS) $(OS_AFLAGS) $(KERNELDIR)/asm/kernel_entry.S -o $(BIN)/kernel_entry.o
+	$(AS) $(OS_AFLAGS) $(KERNELDIR)/util/isr.S -o $(BIN)/isr.o
+	$(AS) $(OS_AFLAGS) $(KERNELDIR)/util/idt.S -o $(BIN)/idt-asm.o
+	$(AS) $(OS_AFLAGS) $(KERNELDIR)/util/gdt.S -o $(BIN)/gdt-asm.o
 	head -c 10240K < /dev/zero > $(BIN)/zeroes.bin
 
 kernel:

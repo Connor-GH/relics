@@ -497,7 +497,7 @@ log_printk(const char *restrict format, ...)
 #endif
 }
 
-volatile int
+int
 getchark(void)
 {
 	// TODO in ps2_keyboard.c:

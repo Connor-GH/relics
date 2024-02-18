@@ -16,6 +16,9 @@ DCC_BASIC_O ?= -o
 DCC_BASIC_C ?= -c
 _DFLAGS =
 
+AS ?= as
+AFLAGS_GNU_AS = --64 --mx86-used-note=no $(AFLAGS)
+AFLAGS_GENERIC = $(AFLAGS)
 
 ifeq ($(RELEASE),true)
 	_COMMON_CFLAGS = -march=$(MARCH)
@@ -36,6 +39,7 @@ ifeq ($(shell $(CC) -v 2>&1 | grep -c "gcc version"), 1)
 		WGCC   += -fanalyzer
 	endif #debug
 	_COMMON_CFLAGS += $(_WFLAGS) $(WGCC)
+	_AFLAGS = $(AFLAGS_GNU_AS)
 
 else ifeq ($(shell $(CC) -v 2>&1 | grep -c "clang version"), 1)
 	include clang_chosen.mk
@@ -47,6 +51,7 @@ else ifeq ($(shell $(CC) -v 2>&1 | grep -c "clang version"), 1)
 endif #debug
 
 	_COMMON_CFLAGS += $(_WFLAGS)
+	_AFLAGS = $(AFLAGS_GENERIC)
 	WNOFLAGS += -Wno-disabled-macro-expansion
 endif #compiler
 

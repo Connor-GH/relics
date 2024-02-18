@@ -38,6 +38,8 @@ extern void
 idt_reload(idtr_t *reg);
 
 static volatile uint64_t timer_ticks = 0;
+extern volatile uint64_t countdown;
+volatile uint64_t countdown = 0;
 
 static void (*irq_handlers[IDT_MAX_DESCRIPTORS])(regs_t *) = { 0 };
 static void
@@ -199,6 +201,8 @@ kbd_irq_handler(ATTR(unused) regs_t *r)
 static void
 timer_handler(ATTR(unused) regs_t *r)
 {
+	if (countdown > 0)
+		countdown--;
 	timer_ticks++;
 }
 static void

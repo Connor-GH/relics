@@ -1,4 +1,5 @@
 CC = clang
+AS ?= clang -integrated-as -c
 LTO = -flto=full
 BINUTILS_PREFIX = llvm-
 

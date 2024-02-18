@@ -29,7 +29,7 @@ iterate_over_map(uint32_t count, struct e820_map_64 *map)
 {
 	for (size_t i = 0; i < count; i++) {
 		log_printk("%lx-%lx %s\n", map[i].baseaddr,
-				   map[i].baseaddr + map[i].length,
+				   map[i].baseaddr + map[i].length-1,
 				   e820_type_human_name(map[i].type));
 	}
 }
