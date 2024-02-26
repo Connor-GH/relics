@@ -534,12 +534,7 @@ log_printk(const char *restrict format, ...)
 #ifdef KERNEL_LOG
 	va_list listp;
 	va_start(listp, format);
-//#ifdef __SSE_enabled
-//	if (cpu_features.sse == 1)
-		printk("[%s] ", PIT_IRQ_timer_get_current_time_since_boot());
-//	else
-//#endif
-//		printk("[0.00000] ");
+	printk("[%s] ", PIT_IRQ_timer_get_current_time_since_boot());
 	actual_print(format, &listp);
 	va_end(listp);
 #endif
