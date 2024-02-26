@@ -41,6 +41,8 @@ reset_video_memory(void);
 void
 init_pixel_mode(void);
 
+const char *milliseconds_as_seconds(uint64_t num, char *buf);
+
 /* output */
 void
 printk(const char *restrict format, ...);

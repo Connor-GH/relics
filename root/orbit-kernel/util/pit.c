@@ -2,6 +2,7 @@
 #include <pit.h>
 #include <inttypes.h>
 #include <asm/wrappers.h>
+#include <stdbool.h>
 #define PIT_FREQUENCY 1193182
 #define PIT_CMD_REG 0x43
 #define PIT_CHANNEL0 0x40
@@ -9,6 +10,11 @@
 #define PIT_CHANNEL2 0x42
 
 extern volatile size_t countdown;
+static bool enabled = false;
+
+bool PIT_enabled(void) {
+	return enabled;
+}
 
 void millisleep(uint64_t millis) {
 	countdown = millis;
@@ -32,4 +38,6 @@ void reprogram_timer(uint16_t hz) {
 	outb(PIT_CMD_REG, command_byte);
 	outb(PIT_CHANNEL0, divisor & 0xFF);
 	outb(PIT_CHANNEL0, divisor >> 8);
+	enabled = true;
+	log_printk("PIT enabled, set to %ldHz\n", hz);
 }

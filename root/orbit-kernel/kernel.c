@@ -82,7 +82,7 @@ ATTR(noreturn) init_kernel(void)
 	reprogram_timer(1000); // tick every ms
 	printk("Sleeping for one second!\n");
 	millisleep(1000);
-
+	// ASM("cli; hlt\n");
 	safe_println("this");
 	relics_shell("> ");
 	for (;;) {

@@ -54,5 +54,6 @@ void
 enable_interrupts(void);
 void
 disable_interrupts(void);
-
+uint64_t
+get_pit_ticks(void);
 #endif /* IDT_H */

@@ -42,6 +42,11 @@ extern volatile uint64_t countdown;
 volatile uint64_t countdown = 0;
 
 static void (*irq_handlers[IDT_MAX_DESCRIPTORS])(regs_t *) = { 0 };
+
+uint64_t get_pit_ticks(void) {
+	return timer_ticks;
+}
+
 static void
 irq_install_handler(int irq, void (*handler)(regs_t *r))
 {

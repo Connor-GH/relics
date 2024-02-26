@@ -284,6 +284,51 @@ print_unsigned_int(unsigned int num)
 {
 	print_unsigned_long((unsigned long)num);
 }
+
+// TODO make more general and extend it to the printk family
+static const char *
+zero_extend_3(uint64_t num, char *number)
+{
+	unsigned long long dgcount = digit_count_unsigned(num);
+	unsigned long long index = dgcount - 1;
+	char x;
+
+	if (num < 10) { // 6 -> 006
+		index += 2;
+		dgcount += 2;
+		number[0] = '0';
+		number[1] = '0';
+	} else if (num < 100) { // 26 -> 026
+		index += 1;
+		dgcount += 1;
+		number[0] = '0';
+	}
+
+	if (num == 0 && dgcount == 1) {
+		number[0] = '0';
+		number[1] = '0';
+		number[2] = '0';
+		number[3] = '\0';
+	} else {
+		while (num != 0) {
+			x = num % 10;
+			number[index] = x + '0';
+		index--;
+			num /= 10;
+		}
+		number[dgcount] = '\0';
+	}
+}
+
+// TODO does not check for overflow
+const char *milliseconds_as_seconds(uint64_t num, char *buf) {
+	size_t idx = digit_count_unsigned(num / 1000);
+
+	ulltoa(num / 1000, buf); // whole number of seconds
+	buf[idx] = '.'; // dot
+	zero_extend_3(num % 1000, buf+idx+1); // milliseconds
+	return buf;
+}
 #ifdef __SSE_enabled
 static void
 print_double(double num)
@@ -489,12 +534,12 @@ log_printk(const char *restrict format, ...)
 #ifdef KERNEL_LOG
 	va_list listp;
 	va_start(listp, format);
-#ifdef __SSE_enabled
-	if (cpu_features.sse == 1)
-		printk("[%f] ", PIT_IRQ_timer_get_current_time_since_boot());
-	else
-#endif
-		printk("[0.00000] ");
+//#ifdef __SSE_enabled
+//	if (cpu_features.sse == 1)
+		printk("[%s] ", PIT_IRQ_timer_get_current_time_since_boot());
+//	else
+//#endif
+//		printk("[0.00000] ");
 	actual_print(format, &listp);
 	va_end(listp);
 #endif
