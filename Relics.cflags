@@ -1,1 +1,1 @@
--std=c17 -D__kernel -D__X86_64__ -D__WORDSIZE__=64
+-std=c17 -D__kernel -D__X86_64__ -D__WORDSIZE__=64 -ffreestanding

@@ -1,7 +1,7 @@
 #ifndef PORT_FUNCTIONS_H
 #define PORT_FUNCTIONS_H
 
-#include <inttypes.h>
+#include <typedefs.h>
 uint8_t
 inb(uint16_t port);
 void

@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <kio.h>
 #include <orbit.h>
 #include <libraryOSes/relics-libOS/apps/shell.h>

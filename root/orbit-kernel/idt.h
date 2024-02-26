@@ -1,6 +1,6 @@
 #ifndef IDT_H
 #define IDT_H
-#include "typedefs.h"
+#include <typedefs.h>
 
 typedef struct __attribute__((packed)) {
 	uint64_t r15;

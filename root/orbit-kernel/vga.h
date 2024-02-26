@@ -1,6 +1,6 @@
 #ifndef VGA_H
 #define VGA_H
-#include <inttypes.h>
+#include <typedefs.h>
 void
 init_pixel_vga(uint8_t vga_color);
 void
