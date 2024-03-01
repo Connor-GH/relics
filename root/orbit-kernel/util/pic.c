@@ -34,7 +34,7 @@ PIC_disable(void)
 /* offset1 - vector offset for primary PIC */
 /* offset2 - same for secondary PIC: offset2..offset2+7 */
 void
-PIC_remap(int32_t offset)
+PIC_remap(uint8_t offset)
 {
 	uint8_t a1, a2;
 	a1 = inb(PIC1_DATA);
@@ -95,7 +95,7 @@ IRQ_set_mask(uint8_t irq_line)
 		port = PIC2_DATA;
 		irq_line -= 8;
 	}
-	value = inb(port) | (1 << irq_line);
+	value = inb(port) | (uint8_t)(1 << irq_line);
 	outb(port, value);
 }
 
@@ -111,18 +111,18 @@ IRQ_clear_mask(uint8_t irq_line)
 		port = PIC2_DATA;
 		irq_line -= 8;
 	}
-	value = inb(port) & ~(1 << irq_line);
+	value = inb(port) & ~(uint8_t)(1 << irq_line);
 	outb(port, value);
 }
 
 static uint16_t
-__pic_get_irq_reg(int ocw3)
+__pic_get_irq_reg(uint8_t ocw3)
 {
 	/* OCW3 to PIC CMD to get the register values.  PIC2 is chained, and
      * represents IRQs 8-15.  PIC1 is IRQs 0-7, with 2 being the chain */
 	outb(PIC1_CMD, ocw3);
 	outb(PIC2_CMD, ocw3);
-	return (inb(PIC2_CMD) << 8) | inb(PIC1_CMD);
+	return (uint16_t)(inb(PIC2_CMD) << 8) | inb(PIC1_CMD);
 }
 
 /* Returns the combined value of the cascaded PICs irq request register */

@@ -38,7 +38,7 @@ PIC_enable(void);
 void
 PIC_disable(void);
 void
-PIC_remap(int32_t offset);
+PIC_remap(uint8_t offset);
 void
 PIC_acknowledge(uint8_t interrupt);
 uint16_t

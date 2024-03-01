@@ -27,6 +27,8 @@ int
 ATTR(noreturn) init_kernel(void)
 {
 	ASM(".code64\t\n");
+	printk("--[Relics version %s]--\n", VERSION);
+	printk("Raw Exokernel-LibraryOS Integrated Computing System\n");
 	/*
      * If you ever run into
      * weird space-dependent
@@ -38,13 +40,10 @@ ATTR(noreturn) init_kernel(void)
      */
 	init_vga(WHITE, BLACK);
 	reset_video_memory();
-	//  cpuflags();
-	/* init PIC */
 	gdt_init();
 	idt_init();
 
 #if 0
-	test_memory();
     /*
      * if running text mode,
      * only use "vga"-named
@@ -58,31 +57,13 @@ ATTR(noreturn) init_kernel(void)
     //init_pixel_vga(GREEN);
     //test_vga_color();
     //reset_pixel_memory();
-
-
-	TRANSITION(1);
-
-	init_vga(WHITE, BRIGHT_MAGENTA);
-	reset_video_memory();
-
-	printk("\n--[Relics version %s]--\n\n", VERSION);
-	printk("Raw Exokernel-LibraryOS Integrated Computing System\n");
-	printk("Relics can also be called 'Relix'.\n");
-	printk("\n");
-	printk(
-		"UNIX Once stood for \"Uniplexed Information [and] Computing System\",\n");
-	printk("and at some point the 'CS' got changed to an 'X'.\n");
-	printk("\n");
-	printk("Welcome to 64-bit long mode!\n");
-	printk("All of this was printed from the kernel!\n");
 #endif
 	enable_interrupts();
 	get_mem_map();
 	reprogram_timer(1000); // tick every ms
 	printk("Sleeping for one second!\n");
 	millisleep(1000);
-	// ASM("cli; hlt\n");
-	safe_println("this");
+	safe_println("this"); // does nothing
 	relics_shell("> ");
 	for (;;) {
 		__asm__ __volatile__("hlt");

@@ -56,7 +56,6 @@ enum e820_type {
 	e820_map_64[E820_MAX_ENTRIES] usable_map;
 	size_t usable_map_len = 0;
 	size_t total_length = 0;
-	printk("Hello from D!: %u\n", e820_count);
 	foreach (i; 0 .. e820_count) {
 		if (e820_map[i].type == e820_type.Usable) {
 			usable_map[usable_map_len] = e820_map[i];
@@ -66,7 +65,7 @@ enum e820_type {
 	printk("Usable map\n");
 	foreach (i; 0 .. usable_map_len) {
 		printk("%0lx-%0lx\n", usable_map[i].baseaddr,
-				usable_map[i].baseaddr+usable_map[i].length);
+				usable_map[i].baseaddr+usable_map[i].length-1);
 		total_length += usable_map[i].length;
 	}
 	printk("%llu bytes available (%lluMiB)\n", total_length,
