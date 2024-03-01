@@ -5,6 +5,7 @@
 #include <cpu.h>
 #endif
 #include <ps2_keyboard.h>
+#include <stdbool.h>
 
 static uint16_t *vga_buffer;
 
@@ -238,6 +239,47 @@ ulltoa(unsigned long long num, char *number)
 	}
 }
 
+static void
+decimal_to_base(unsigned long long n, int base, bool *zero_pad)
+{
+	const char digits[17] = "0123456789abcdef";
+	char num[64];
+	int i = 0;
+	if (n == 0 && *zero_pad == false) {
+		print_char('0');
+		return;
+	}
+
+	while (n > 0) {
+		num[i] = digits[n % (unsigned long long)base];
+		n /= (unsigned long long)base;
+		i++;
+	}
+	// zero extension
+	if (*zero_pad == true) {
+		if (base == 16) {
+			while (i < 16) {
+				num[i] = '0';
+				i++;
+			}
+		} else if (base == 2) {
+			while (i < 64) {
+				num[i] = '0';
+				i++;
+			}
+		} else if (base == 10) {
+			while (i < 20) { // estimate; 10 does not evenly divide into base 2
+				num[i] = '0';
+				i++;
+			}
+		}
+	}
+	for (int j = i - 1; j >= 0; j--) {
+		print_char(num[j]);
+	}
+	*zero_pad = false;
+}
+
 //print string by calling print_char
 static void
 print_string(const char *str)
@@ -268,21 +310,19 @@ print_int(int num)
 	print_long((long)num);
 }
 static void
-print_unsigned_long_long(unsigned long long num)
+print_unsigned_long_long(unsigned long long num, bool *zero_pad)
 {
-	char str_num[64];
-	ulltoa(num, str_num);
-	print_string(str_num);
+	decimal_to_base((unsigned long long)num, 10, zero_pad);
 }
 static void
-print_unsigned_long(unsigned long num)
+print_unsigned_long(unsigned long num, bool *zero_pad)
 {
-	print_unsigned_long_long((unsigned long long)num);
+	print_unsigned_long_long((unsigned long long)num, zero_pad);
 }
 static void
-print_unsigned_int(unsigned int num)
+print_unsigned_int(unsigned int num, bool *zero_pad)
 {
-	print_unsigned_long((unsigned long)num);
+	print_unsigned_long((unsigned long)num, zero_pad);
 }
 
 // TODO make more general and extend it to the printk family
@@ -346,43 +386,32 @@ print_double(double num)
 }
 #endif
 
-static void
-decimal_to_base(unsigned long n, int base)
-{
-	const char digits[17] = "0123456789abcdef";
-	char num[64];
-	int i = 0;
-	if (n == 0) {
-		print_char('0');
-		return;
-	}
-	while (n > 0) {
-		num[i] = digits[n % (unsigned long)base];
-		n /= (unsigned long)base;
-		i++;
-	}
-	for (int j = i - 1; j >= 0; j--)
-		print_char(num[j]);
-}
 
 #define va_list __builtin_va_list
 #define va_arg __builtin_va_arg
 /* what works:
  * %c, %i, %d, %%, %u, %s, %lu, %ld, %lld, %llu, %b, %o, %x.
  *
- * No zero extension, no "alternative form", etc.
+ *  zero padding, but only for unsigned integers at the moment
  *
  * */
 static void
 actual_print(const char *format, va_list *argp)
 {
+	bool zero_pad = false;
 	while (*format) {
 		if (*format == '%') {
+format:
 			format++;
 			switch (*format) {
 			case '%':
 				print_char('%');
 				break;
+			case '0': {
+				zero_pad = true;
+				goto format;
+				break;
+			}
 			case 'i':
 			case 'd': {
 				int d = va_arg(*argp, int);
@@ -401,7 +430,7 @@ actual_print(const char *format, va_list *argp)
 					if (*format == 'u') {
 						unsigned long long llu =
 							va_arg(*argp, unsigned long long);
-						print_unsigned_long_long(llu);
+						print_unsigned_long_long(llu, &zero_pad);
 					} else if (*format == 'd') {
 						long long lld = va_arg(*argp, long long);
 						print_long_long(lld);
@@ -412,7 +441,7 @@ actual_print(const char *format, va_list *argp)
 				}
 				case 'u': {
 					unsigned long lu = va_arg(*argp, long unsigned);
-					print_unsigned_long(lu);
+					print_unsigned_long(lu, &zero_pad);
 					break;
 				}
 				case 'd': {
@@ -422,20 +451,16 @@ actual_print(const char *format, va_list *argp)
 				}
 				case 'b': {
 					unsigned long lb = va_arg(*argp, unsigned long);
-					if (lb != 0) {
-						print_char('0');
-						print_char('b');
-					}
-					decimal_to_base(lb, 2);
+					print_char('0');
+					print_char('b');
+					decimal_to_base(lb, 2, &zero_pad);
 					break;
 				}
 				case 'x': {
 					unsigned long x = va_arg(*argp, unsigned long);
-					if (x != 0) {
-						print_char('0');
-						print_char('x');
-					}
-					decimal_to_base(x, 16);
+					print_char('0');
+					print_char('x');
+					decimal_to_base(x, 16, &zero_pad);
 					break;
 				}
 				default: {
@@ -447,43 +472,35 @@ actual_print(const char *format, va_list *argp)
 			}
 			case 'u': {
 				unsigned int u = va_arg(*argp, unsigned int);
-				print_unsigned_int(u);
+				print_unsigned_int(u, &zero_pad);
 				break;
 			}
 			case 'b': {
 				unsigned int b = va_arg(*argp, unsigned int);
-				if (b != 0) {
-					print_char('0');
-					print_char('b');
-				}
-				decimal_to_base(b, 2);
+				print_char('0');
+				print_char('b');
+				decimal_to_base(b, 2, &zero_pad);
 				break;
 			}
 			case 'X': {
 				unsigned int x = va_arg(*argp, unsigned int);
-				if (x != 0) {
-					print_char('0');
-					print_char('X');
-				}
-				decimal_to_base(x, 16);
+				print_char('0');
+				print_char('X');
+				decimal_to_base(x, 16, &zero_pad);
 				break;
 			}
 			case 'x': {
 				unsigned int x = va_arg(*argp, unsigned int);
-				if (x != 0) {
-					print_char('0');
-					print_char('x');
-				}
-				decimal_to_base(x, 16);
+				print_char('0');
+				print_char('x');
+				decimal_to_base(x, 16, &zero_pad);
 				break;
 			}
 			case 'o': {
 				unsigned int o = va_arg(*argp, unsigned int);
-				if (o != 0) {
-					print_char('0');
-					print_char('o');
-				}
-				decimal_to_base(o, 8);
+				print_char('0');
+				print_char('o');
+				decimal_to_base(o, 8, &zero_pad);
 				break;
 			}
 			case 'c': {

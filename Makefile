@@ -1,6 +1,6 @@
 PACKAGE_NAME_NOTSTRING = Relics
 PACKAGE_NAME = "$(PACKAGE_NAME_NOTSTRING)"
-PACKAGE_VERSION = 0.0.4
+PACKAGE_VERSION = 0.0.5
 C_STD ?= c11
 SRC		= $(shell pwd)
 BIN		= ./bin
@@ -13,7 +13,7 @@ IVARS = -I$(SYSROOT)
 KERNEL_IVARS = -I$(SYSROOT) -I$(KERNELDIR)
 LIBOS_IVARS = -I$(SYSROOT) -I$(LIBOSDIR)
 
-KERNEL_VERSION = 0.0.4
+KERNEL_VERSION = 0.0.5
 
 SOURCES_UTIL = $(wildcard $(KERNELDIR)/util/*.c)
 SOURCES_LIBOS = $(LIBOSDIR)/apps/shell.c
@@ -121,7 +121,8 @@ include cc_and_flags.mk
 OS_CFLAGS += $(_CFLAGS)
 LIBOS_CFLAGS += $(_CFLAGS)
 OS_LDFLAGS += $(_LFLAGS)
-D_IVARS = -I$(KERNELDIR)/util/d/runtime
+D_IVARS = -I$(KERNELDIR)/util/d/runtime \
+		  -I$(KERNELDIR)/util/d
 OS_AFLAGS = $(AFLAGS)
 
 all:

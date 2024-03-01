@@ -3,6 +3,12 @@
 #include <inttypes.h>
 #include <kio.h>
 
+extern struct e820_map_64 *e820_map;
+struct e820_map_64 *e820_map = (struct e820_map_64 *)0x500;
+
+extern uint32_t e820_count;
+uint32_t e820_count = 0;
+
 static const char *
 e820_type_human_name(uint32_t type)
 {
@@ -28,7 +34,7 @@ static void
 iterate_over_map(uint32_t count, struct e820_map_64 *map)
 {
 	for (size_t i = 0; i < count; i++) {
-		log_printk("%lx-%lx %s\n", map[i].baseaddr,
+		log_printk("%0lx-%0lx %s\n", map[i].baseaddr,
 				   map[i].baseaddr + map[i].length-1,
 				   e820_type_human_name(map[i].type));
 	}
@@ -43,7 +49,9 @@ get_mem_map(void)
 
 	log_printk("E820 Memory Map:\n");
 	log_printk("entry count: %d\n", *e820_entry_count);
+	e820_count = *e820_entry_count;
 
-	struct e820_map_64 *e820_map = (struct e820_map_64 *)0x500;
-	iterate_over_map(*e820_entry_count, e820_map);
+	iterate_over_map(e820_count, e820_map);
+	extern void pmem_map_d(void);
+	pmem_map_d();
 }
