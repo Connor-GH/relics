@@ -18,7 +18,7 @@ enum e820_type {
 struct e820_map_64 {
 	uint64_t baseaddr;
 	uint64_t length;
-	uint32_t type;
+	uint32_t entry_type;
 } ATTR(packed);
 void
 get_mem_map(void);

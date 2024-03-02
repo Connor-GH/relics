@@ -1,5 +1,4 @@
 #include <orbit-kernel/stdarg.h>
-
 extern int
 println_d(const char *fmt, va_list *argp);
 

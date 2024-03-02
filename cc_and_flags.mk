@@ -74,7 +74,7 @@ ifneq ($(DCC), gdc)
   ifeq ($(DCC),dmd)
 	_DFLAGS += -O -mcpu=$(D_MCPU_DMD) -defaultlib=none # -mattr=-avx,-sse,64bit
   else # is ldc
-	_DFLAGS += -O3 -mcpu=$(MARCH) -nodefaultlib -mattr=-avx,-sse,64bit
+	_DFLAGS += -O3 -mcpu=$(MARCH) -nodefaultlib -mattr=-avx,-sse,64bit -w
 	# _LD_DFLAGS += -L-lstdc++ -release
     ifeq ($(CC), clang)
     ifeq ($(DEBUG),true)
@@ -87,7 +87,8 @@ ifneq ($(DCC), gdc)
 
   endif # if dmd/ldc
 else
-	_DFLAGS += $(COMMON_FLAGS) -march=$(MARCH) -fno-druntime -defaultlib=none -fno-stack-protector $(DFLAGS)
+	_DFLAGS += $(COMMON_FLAGS) -march=$(MARCH) -fno-druntime -defaultlib=none \
+			   -fno-stack-protector -Wall -Werror $(DFLAGS)
 	_LD_DFLAGS +=
 	GDC_XD = -xd
 endif # if gdc

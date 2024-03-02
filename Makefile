@@ -21,11 +21,7 @@ SOURCES_LIBOS = $(LIBOSDIR)/apps/shell.c
 # D stuff
 D_SOURCES = $(wildcard $(KERNELDIR)/util/d/*.d)
 
-SOURCES_32BIT =  \
-$(KERNELDIR)/32bit/test_memory.c
-
 OBJECTS_UTIL := $(SOURCES_UTIL:$(KERNELDIR)/util/%.c=$(BIN)/%.o)
-OBJECTS_32BIT := $(SOURCES_32BIT:$(KERNELDIR)/32bit/%.c=$(BIN)/%.o)
 OBJECTS_LIBOS := $(SOURCES_LIBOS:$(LIBOSDIR)/apps/%.c=$(BIN)/%.o)
 
 D_OBJECTS := $(D_SOURCES:$(KERNELDIR)/util/d/%.d=$(BIN)/%.o)
@@ -138,7 +134,6 @@ build:
 	$(MAKE) kernel
 	$(MAKE) $(OBJECTS_UTIL)
 	$(MAKE) $(D_OBJECTS)
-	$(MAKE) $(OBJECTS_32BIT)
 	$(MAKE) $(OBJECTS_LIBOS)
 	$(MAKE) together
 
@@ -159,10 +154,6 @@ $(OBJECTS_UTIL): $(BIN)/%.o : $(KERNELDIR)/util/%.c
 $(D_OBJECTS): $(BIN)%.o : $(KERNELDIR)/util/d/%.d
 	$(DCC) $(_DFLAGS) $(D_IVARS) -c $< $(DCC_BASIC_O)$@
 
-
-$(OBJECTS_32BIT): $(BIN)/%.o : $(KERNELDIR)/32bit/%.c
-	$(CC) $(OS_CFLAGS) -c $< -o $@
-
 $(OBJECTS_LIBOS): $(BIN)/%.o : $(LIBOSDIR)/apps/%.c
 	$(CC) $(LIBOS_CFLAGS) -c $< -o $@
 
@@ -173,7 +164,7 @@ together:
 	$(LD) $(OS_LDFLAGS) -o $(BIN)/full_kernel.bin -Ttext 0x1000 \
 		$(BIN)/kernel_entry.o \
 		$(BIN)/kernel.o $(BIN)/isr.o $(BIN)/idt-asm.o \
-		$(BIN)/gdt-asm.o $(OBJECTS_UTIL) $(OBJECTS_32BIT) \
+		$(BIN)/gdt-asm.o $(OBJECTS_UTIL) \
 		$(OBJECTS_LIBOS) $(D_OBJECTS) --oformat binary
 	@cat $(BIN)/boot.bin $(BIN)/full_kernel.bin $(BIN)/zeroes.bin > $(BIN)/OS.bin
 
