@@ -26,31 +26,30 @@ enum e820_type {
 	Unusable,
 	Pmem
 }
-//static mem_alloc_entry *alloc_table = void;
 
-//static mem_alloc_entry *alloc_table = void;
-//static size_t total_length = 0;
-//void *page_allocator(size_t num_pages) {
+static mem_alloc_entry *alloc_table = void;
+static size_t total_length = 0;
+void *page_allocator(size_t num_pages) {
 
-//}
+}
 
-//struct mem_alloc_entry {
-//	void *ptr;
-//	size_t length;
-//	mem_alloc_entry *next;
-//}
+struct mem_alloc_entry {
+	void *ptr;
+	size_t length;
+	mem_alloc_entry *next;
+}
 
-/*@system extern (C) void bootstrap_mem_allocator() {
+@system extern (C) void bootstrap_mem_allocator() {
 	alloc_table.ptr = alloc_table;
 	if (total_length < usable_map[0].length)
 		alloc_table.length = E820_MAX_ENTRIES * total_length;
 	else
 		printk("FAILED\n");
-}*/
+}
 
-//void *mem_allocator(size_t size) {
+void *mem_allocator(size_t size) {
 
-//}
+}
 
 // initialize map of usable pages
 @system extern (C) void pmem_map_d() {

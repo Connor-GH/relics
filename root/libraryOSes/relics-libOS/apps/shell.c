@@ -60,7 +60,7 @@ static void
 sleep_builtin(const char *buf)
 {
 	if ('1' <= buf[7] && buf[7] <= '9')
-		sleep(buf[7]-0x30);
+		sleep(buf[7] - 0x30);
 }
 
 void

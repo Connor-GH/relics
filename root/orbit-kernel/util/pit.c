@@ -12,18 +12,24 @@
 extern volatile size_t countdown;
 static bool enabled = false;
 
-bool PIT_enabled(void) {
+bool
+PIT_enabled(void)
+{
 	return enabled;
 }
 
-void millisleep(uint64_t millis) {
+void
+millisleep(uint64_t millis)
+{
 	countdown = millis;
 	while (countdown > 0) {
 		ASM("hlt");
 	}
 }
 
-void reprogram_timer(uint16_t hz) {
+void
+reprogram_timer(uint16_t hz)
+{
 	if (hz == 0) {
 		log_printk("Hz cannot be zero, not reprogramming.\n");
 		return;

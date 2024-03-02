@@ -41,7 +41,8 @@ reset_video_memory(void);
 void
 init_pixel_mode(void);
 
-const char *milliseconds_as_seconds(uint64_t num, char *buf);
+const char *
+milliseconds_as_seconds(uint64_t num, char *buf);
 
 /* output */
 void
@@ -50,5 +51,6 @@ void
 log_printk(const char *restrict format, ...);
 
 /* input */
-int getchark(void);
+int
+getchark(void);
 #endif

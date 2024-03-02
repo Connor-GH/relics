@@ -19,7 +19,8 @@
 	} while (0)
 
 int ATTR(noreturn) init_kernel(void);
-int println_d(const char *fmt, ...);
+int
+println_d(const char *fmt, ...);
 
 int
 ATTR(noreturn) init_kernel(void)

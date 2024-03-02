@@ -12,7 +12,7 @@ enum e820_type {
 	E820_TYPE_PMEM = 7
 };
 
-#define E820_MAX_ENTRIES                      \
+#define E820_MAX_ENTRIES \
 	100 // arbitrary, but we want to be below \
 		// KERNEL_LOCATION
 struct e820_map_64 {

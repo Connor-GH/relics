@@ -155,22 +155,17 @@ print_char(const char ch)
 		update_cursor(vga_index % VGA_WIDTH, next_line_index - 1);
 	}
 }
-static int
+static void
 putchark(int c)
 {
-	if ((c > 255) || (c < 0)) {
-		return -1;
-	} else {
-		print_char((char)c);
-		return 0;
-	}
+	print_char((char)c);
 }
 
 static uint32_t
 digit_count(int64_t num)
 {
 	uint32_t count = 0;
-	if (num == 0)
+	if (num < 10)
 		return 1;
 	if (num < 0) {
 		num *= -1;
@@ -182,11 +177,12 @@ digit_count(int64_t num)
 	}
 	return count;
 }
+// safety: no 64-bit number will overflow a digit count of 32-bits.
 static uint32_t
 digit_count_unsigned(uint64_t num)
 {
 	uint32_t count = 0;
-	if (num == 0)
+	if (num < 10)
 		return 1;
 	while (num > 0) {
 		count++;
@@ -239,6 +235,9 @@ ulltoa(unsigned long long num, char *number)
 	}
 }
 
+// safety(1): zero_pad is guaranteed at callsite to be non-null
+// safety(2): num does not need a null byte since it is not
+// printed as a string.
 static void
 decimal_to_base(unsigned long long n, int base, bool *zero_pad)
 {
@@ -280,7 +279,9 @@ decimal_to_base(unsigned long long n, int base, bool *zero_pad)
 	*zero_pad = false;
 }
 
-//print string by calling print_char
+// print string by calling print_char
+// safety: str pointer will never be overrun, however
+// unsupported bytes could be printed (mostly harmless)
 static void
 print_string(const char *str)
 {
@@ -326,6 +327,9 @@ print_unsigned_int(unsigned int num, bool *zero_pad)
 }
 
 // TODO make more general and extend it to the printk family
+// safety(1): every number is null-terminated no matter what branch is taken
+// safety(2): `number' is a 64 byte buffer that will never be overrun from
+// digit_count_unsigned (which returns a max of ~20
 static const char *
 zero_extend_3(uint64_t num, char *number)
 {
@@ -353,20 +357,23 @@ zero_extend_3(uint64_t num, char *number)
 		while (num != 0) {
 			x = num % 10;
 			number[index] = x + '0';
-		index--;
+			index--;
 			num /= 10;
 		}
 		number[dgcount] = '\0';
 	}
 }
 
-// TODO does not check for overflow
-const char *milliseconds_as_seconds(uint64_t num, char *buf) {
+// buf's size is guaranteed to be 64 bytes at the callsite
+// safety: no buffer overflow when these numbers are concatenated
+const char *
+milliseconds_as_seconds(uint64_t num, char *buf)
+{
 	size_t idx = digit_count_unsigned(num / 1000);
 
 	ulltoa(num / 1000, buf); // whole number of seconds
 	buf[idx] = '.'; // dot
-	zero_extend_3(num % 1000, buf+idx+1); // milliseconds
+	zero_extend_3(num % 1000, buf + idx + 1); // milliseconds
 	return buf;
 }
 #ifdef __SSE_enabled
@@ -385,7 +392,6 @@ print_double(double num)
 		print_unsigned_long((num - (uint64_t)num) * 1000000);
 }
 #endif
-
 
 #define va_list __builtin_va_list
 #define va_arg __builtin_va_arg
