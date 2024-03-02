@@ -1,4 +1,5 @@
 module pmm;
+import std.safe_asm;
 
 @safe @nogc nothrow:
 
@@ -7,7 +8,7 @@ module pmm;
 	align(1):
 	ulong baseaddr;
 	ulong length;
-	uint type;
+	uint entry_type;
 }
 
 // both of these are initialized from C in "get_mem_map()"
@@ -57,7 +58,7 @@ enum e820_type {
 	size_t usable_map_len = 0;
 	size_t total_length = 0;
 	foreach (i; 0 .. e820_count) {
-		if (e820_map[i].type == e820_type.Usable) {
+		if (e820_map[i].entry_type == e820_type.Usable) {
 			usable_map[usable_map_len] = e820_map[i];
 			usable_map_len++;
 		}
@@ -70,8 +71,5 @@ enum e820_type {
 	}
 	printk("%llu bytes available (%lluMiB)\n", total_length,
 			total_length / 1024	/ 1024);
-	asm pure @safe @nogc nothrow {
-		"cli;" ~
-		"hlt";
-	}
+	mixin(safe_asm!("cli; hlt"));
 }
