@@ -27,6 +27,7 @@ enum e820_type {
 	Pmem
 }
 
+/*
 static mem_alloc_entry *alloc_table = void;
 static size_t total_length = 0;
 void *page_allocator(size_t num_pages) {
@@ -49,7 +50,7 @@ struct mem_alloc_entry {
 
 void *mem_allocator(size_t size) {
 
-}
+}*/
 
 // initialize map of usable pages
 @system extern (C) void pmem_map_d() {

@@ -5,4 +5,5 @@
 /scripts/lifesaver.sh
 /scripts/turnon-off-qemu.sh
 /cscope.out
-/.qtc_clangd/*
+/compile_commands.json
+/.cache/**
