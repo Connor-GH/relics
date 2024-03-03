@@ -1,7 +1,7 @@
 #include <e820.h>
 #include <panic.h>
-#include <inttypes.h>
 #include <kio.h>
+#include <pmm.h>
 
 extern struct e820_map_64 *e820_map;
 struct e820_map_64 *e820_map = (struct e820_map_64 *)0x500;
@@ -52,6 +52,5 @@ get_mem_map(void)
 	e820_count = *e820_entry_count;
 
 	iterate_over_map(e820_count, e820_map);
-	extern void pmem_map_d(void);
-	pmem_map_d();
+	pmem_map(e820_map, e820_count);
 }

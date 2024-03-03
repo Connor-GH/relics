@@ -62,7 +62,7 @@ ATTR(noreturn) init_kernel(void)
 	reprogram_timer(1000); // tick every ms
 	printk("Sleeping for one second!\n");
 	millisleep(1000);
-	println_d("Fantastic!");
+	// println_d("Fantastic!");
 	relics_shell("> ");
 	for (;;) {
 		__asm__ __volatile__("hlt");
