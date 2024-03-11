@@ -8,7 +8,7 @@
  * dependent.
  */
 uint32_t
-strlen(const char *s)
+strlen(const char *__borrowed s)
 {
 	uint32_t length = 0;
 	while (s[length])
@@ -24,7 +24,7 @@ strlen(const char *s)
  * s1 is no issue.
  */
 int
-strcmp(const char *s1, const char *s2)
+strcmp(const char *__borrowed s1, const char *__borrowed s2)
 {
 	for (size_t i = 0; i < strlen(s1); i++) {
 		if (s1[i] - s2[i] == 0)
@@ -35,7 +35,7 @@ strcmp(const char *s1, const char *s2)
 }
 
 int
-strncmp(const char *s1, const char *s2, size_t n)
+strncmp(const char *__borrowed s1, const char *__borrowed s2, size_t n)
 {
 	for (size_t i = 0; i < n; i++) {
 		if (s1[i] == s2[i])
@@ -46,7 +46,7 @@ strncmp(const char *s1, const char *s2, size_t n)
 }
 
 void *
-memcpy(void *dest, void *src, size_t n)
+memcpy(void *__inout dest, void *__borrowed src, size_t n)
 {
 	for (size_t i = 0; i < n; i++) {
 		((char *)dest)[i] = ((char *)src)[i];
@@ -55,7 +55,7 @@ memcpy(void *dest, void *src, size_t n)
 }
 
 void *
-memset(void *s, int c, size_t n)
+memset(void *__inout s, int c, size_t n)
 {
 	for (size_t i = 0; i < n; i++) {
 		((uint8_t *)s)[i] = (uint8_t)c;
@@ -64,7 +64,7 @@ memset(void *s, int c, size_t n)
 }
 
 char *
-strcpy(char *dest, const char *src)
+strcpy(char *__inout dest, const char *__borrowed src)
 {
 	size_t i;
 	for (i = 0; src[i] != '\0'; i++)
@@ -74,7 +74,7 @@ strcpy(char *dest, const char *src)
 }
 
 char *
-kernel_strncpy(char *dest, const char *src, size_t n)
+kernel_strncpy(char *__inout dest, const char *__borrowed src, size_t n)
 {
 	size_t i;
 	for (i = 0; i < n && src[i] != '\0'; i++)

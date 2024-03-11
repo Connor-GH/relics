@@ -2,9 +2,13 @@
 #include <panic.h>
 #include <kio.h>
 #include <pmm.h>
+#include <asm/wrappers.h>
 
+
+#define E820_COUNT_ADDR 0x496
+#define E820_MAP_ADDR 0x500
 extern struct e820_map_64 *e820_map;
-struct e820_map_64 *e820_map = (struct e820_map_64 *)0x500;
+struct e820_map_64 *e820_map = (struct e820_map_64 *)E820_MAP_ADDR;
 
 extern uint32_t e820_count;
 uint32_t e820_count = 0;
@@ -31,7 +35,7 @@ e820_type_human_name(uint32_t type)
 }
 
 static void
-iterate_over_map(uint32_t count, struct e820_map_64 *map)
+iterate_over_map(uint32_t count, struct e820_map_64 *__borrowed map)
 {
 	for (size_t i = 0; i < count; i++) {
 		log_printk("%0lx-%0lx %s\n", map[i].baseaddr,
@@ -43,14 +47,20 @@ iterate_over_map(uint32_t count, struct e820_map_64 *map)
 void
 get_mem_map(void)
 {
-	uint32_t *e820_entry_count = (uint32_t *)0x496;
-	if (*e820_entry_count > E820_MAX_ENTRIES)
+  // needed because GCC does not know the bounds of this pointer
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Warray-bounds"
+	const uint32_t e820_entry_count =  *((uint32_t *)E820_COUNT_ADDR);
+  #pragma GCC diagnostic pop
+  
+	if (e820_entry_count > E820_MAX_ENTRIES)
 		panic2(GENERIC_ISSUE, "Too many E820 entries!");
 
 	log_printk("E820 Memory Map:\n");
-	log_printk("entry count: %d\n", *e820_entry_count);
-	e820_count = *e820_entry_count;
+	log_printk("entry count: %d\n", e820_entry_count);
+	e820_count = e820_entry_count;
 
+  extern void pmem_map(struct e820_map_64 *, uint32_t);
 	iterate_over_map(e820_count, e820_map);
 	pmem_map(e820_map, e820_count);
 }

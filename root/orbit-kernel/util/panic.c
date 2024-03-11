@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <kio.h>
 #include <panic.h>
 #include <orbit.h>
@@ -8,7 +7,7 @@
 	 "The system will now go into an infinite loop.\n" \
 	 "Please restart the system through hardware.")
 
-ATTR(noreturn) void panic2(int i, const char *errmsg)
+ATTR(noreturn) void panic2(int i, const char *__borrowed errmsg)
 {
 	const char *issue;
 	switch (i) {

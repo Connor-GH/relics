@@ -5,6 +5,7 @@
 #ifdef KERNEL_LOG
 #include <irq.h>
 #endif
+#include <orbit.h>
 
 #define VIDEO_MEMORY 0xB8000
 #define BUFSIZE 2000
@@ -42,13 +43,13 @@ void
 init_pixel_mode(void);
 
 const char *
-milliseconds_as_seconds(uint64_t num, char *buf);
+milliseconds_as_seconds(uint64_t num, char *__inout buf, size_t buf_size);
 
 /* output */
 void
-printk(const char *restrict format, ...);
+printk(const char *__borrowed restrict format, ...);
 void
-log_printk(const char *restrict format, ...);
+log_printk(const char *__borrowed restrict format, ...);
 
 /* input */
 int

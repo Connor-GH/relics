@@ -18,15 +18,27 @@
 #define likely(x) x
 #endif
 #if defined(__has_builtin) && __has_builtin(__builtin_unreachable)
-#define UNREACHABLE __builtin_unreachable()
+#define UNREACHABLE() __builtin_unreachable()
 #else
-#define UNREACHABLE                  \
-	volatile char UB = *((char *)0); \
-	do {                             \
-	} while (0)
+ATTR(noreturn) inline void unreachable_func(void) {}
+#define UNREACHABLE() (unreachable_func())
+#endif
+
+#ifdef __clang__
+#define NOOPT ATTR(optnone)
+#else 
+#define NOOPT ATTR(optimize("O0"))
 #endif
 
 #define CODE16 ASM(".code16\t\n")
 #define CODE32 ASM(".code32\t\n")
 #define CODE64 ASM(".code64\t\n")
+
+/* type annotations */ 
+// instructs that a type will be changed.
+#define __owned
+// instructs that a type will *not* be changed.
+#define __borrowed const
+// instructs that a type will be changed and returned.
+#define __inout
 #endif /* ORBIT_H */

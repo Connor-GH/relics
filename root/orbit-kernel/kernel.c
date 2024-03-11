@@ -9,21 +9,14 @@
 #include <gdt.h>
 #include <e820.h>
 
-#define TRANSITION(x)                                       \
-                                                            \
-	for (int i = x; i > 0; i--) {                           \
-		printk("Going to input test screen in %d...\n", i); \
-		sleep(0x17FFFFFF);                                  \
-	}                                                       \
-	do {                                                    \
-	} while (0)
 
-int ATTR(noreturn) init_kernel(void);
+ATTR(noreturn) int init_kernel(void);
 int
-println_d(const char *fmt, ...);
+println_d(const char __owned *fmt, ...);
 
+ATTR(noreturn)
 int
-ATTR(noreturn) init_kernel(void)
+init_kernel(void)
 {
 	ASM(".code64\t\n");
 	printk("--[Relics version %s]--\n", VERSION);
@@ -58,11 +51,13 @@ ATTR(noreturn) init_kernel(void)
     //reset_pixel_memory();
 #endif
 	enable_interrupts();
-	get_mem_map();
 	reprogram_timer(1000); // tick every ms
 	printk("Sleeping for one second!\n");
 	millisleep(1000);
-	// println_d("Fantastic!");
+	get_mem_map();
+  log_printk("Halting!\n");
+  ASM("cli; hlt");
+  // println_d("Fantastic!");
 	relics_shell("> ");
 	for (;;) {
 		__asm__ __volatile__("hlt");

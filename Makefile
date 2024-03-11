@@ -1,7 +1,7 @@
 PACKAGE_NAME_NOTSTRING = Relics
 PACKAGE_NAME = "$(PACKAGE_NAME_NOTSTRING)"
 PACKAGE_VERSION = 0.0.5
-C_STD ?= c11
+C_STD ?= c17
 SRC		= $(shell pwd)
 BIN		= ./bin
 INCLUDE	= ./include
@@ -19,12 +19,12 @@ SOURCES_UTIL = $(wildcard $(KERNELDIR)/util/*.c)
 SOURCES_LIBOS = $(LIBOSDIR)/apps/shell.c
 
 # D stuff
-# D_SOURCES = $(wildcard $(KERNELDIR)/util/d/*.d)
+D_SOURCES = $(wildcard $(KERNELDIR)/util/d/*.d)
 
 OBJECTS_UTIL := $(SOURCES_UTIL:$(KERNELDIR)/util/%.c=$(BIN)/%.o)
 OBJECTS_LIBOS := $(SOURCES_LIBOS:$(LIBOSDIR)/apps/%.c=$(BIN)/%.o)
 
-# D_OBJECTS := $(D_SOURCES:$(KERNELDIR)/util/d/%.d=$(BIN)/%.o)
+D_OBJECTS := $(D_SOURCES:$(KERNELDIR)/util/d/%.d=$(BIN)/%.o)
 
 ZERO_STACK_PROTECTION = \
 						$(call cc-option,-fcf-protection=none) \
@@ -52,7 +52,7 @@ OS_CFLAGS = $(COMMON_OS_CFLAGS) -march=x86-64 \
 			-mno-red-zone $(KERNEL_IVARS) -mno-avx \
 			-mno-sse -mno-3dnow -mcmodel=kernel --sysroot=$(SYSROOT) \
 			-D__kernel -DKERNEL_LOG $(KCFLAGS)
-OS_LDFLAGS = -nostdlib -z max-page-size=0x1000 $(LDFLAGS) $(KLDFLAGS)
+OS_LDFLAGS = -nostdlib -z max-page-size=0x10000 $(LDFLAGS) $(KLDFLAGS)
 
 
 ifeq ($(FEATURE_FLAGS),)
@@ -133,7 +133,7 @@ build:
 	$(MAKE) assembly
 	$(MAKE) kernel
 	$(MAKE) $(OBJECTS_UTIL)
-	# $(MAKE) $(D_OBJECTS)
+	$(MAKE) $(D_OBJECTS)
 	$(MAKE) $(OBJECTS_LIBOS)
 	$(MAKE) together
 
@@ -160,12 +160,12 @@ $(OBJECTS_LIBOS): $(BIN)/%.o : $(LIBOSDIR)/apps/%.c
 
 together:
 	$(LD) -o $(BIN)/boot.bin $(BIN)/boot.o \
-		--oformat binary -e _start -melf_x86_64 -Ttext 0x7c00
-	$(LD) $(OS_LDFLAGS) -o $(BIN)/full_kernel.bin -Ttext 0x1000 \
+		 --oformat binary -e _start -m elf_x86_64 --section-start=.text=0x7c00 # -Ttext 0x7c00
+	$(LD) $(OS_LDFLAGS) -o $(BIN)/full_kernel.bin -m elf_x86_64 --section-start=.text=0x1000 \
 		$(BIN)/kernel_entry.o \
 		$(BIN)/kernel.o $(BIN)/isr.o $(BIN)/idt-asm.o \
 		$(BIN)/gdt-asm.o $(OBJECTS_UTIL) \
-		$(OBJECTS_LIBOS) --oformat binary # $(D_OBJECTS) --oformat binary
+		$(OBJECTS_LIBOS) $(D_OBJECTS) --oformat binary
 	@cat $(BIN)/boot.bin $(BIN)/full_kernel.bin $(BIN)/zeroes.bin > $(BIN)/OS.bin
 
 run:

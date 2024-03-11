@@ -16,11 +16,11 @@
 	do {                                \
 	} while (0)
 static void
-ATTR(noreturn) panic_irq(const char *string)
+ATTR(noreturn) panic_irq(const char *__borrowed string)
 {
 	printk(string);
 	ASM("cli; hlt\t\n");
-	UNREACHABLE;
+	UNREACHABLE();
 }
 
 extern uint64_t isr_stub_table[];
@@ -35,7 +35,7 @@ typedef struct {
 static idtr_t idtr;
 
 extern void
-idt_reload(idtr_t *reg);
+idt_reload(idtr_t *__borrowed reg);
 
 static volatile uint64_t timer_ticks = 0;
 extern volatile uint64_t countdown;
@@ -50,7 +50,7 @@ get_pit_ticks(void)
 }
 
 static void
-irq_install_handler(int irq, void (*handler)(regs_t *r))
+irq_install_handler(int irq, void (*handler)(regs_t *__owned r))
 {
 	irq_handlers[irq] = handler;
 }
@@ -102,7 +102,7 @@ static idt_entry_t idt[IDT_MAX_DESCRIPTORS] = { 0 }; /* Create an array of
 													  for performance */
 
 void
-exception_handler(regs_t *r)
+exception_handler(regs_t *__owned r)
 {
 	const char *exceptions[] = { "division by zero",
 								 "debug",
@@ -145,7 +145,11 @@ exception_handler(regs_t *r)
 		PRETTY_PRINT_INT(r->irq);
 		printk("At: %x\n", r->rsp);
 		decipher_error_code(r->error_code);
-		panic_irq(exceptions[r->irq]);
+		printk("%s\n", exceptions[r->irq]);
+    if (r->irq == 0xe) {
+      printk("At %lx\n", (void *)r->rip);
+    }
+    panic_irq("Halting now.");
 	} else if (32 <= r->irq && r->irq < 32 + 16) {
 		void (*handler)(regs_t *r);
 		handler = irq_handlers[r->irq - 32];
@@ -169,7 +173,7 @@ idt_set_descriptor(uint8_t vector, uintptr_t isr, ATTR(unused) uint8_t ist)
 	descriptor->bits.dpl = 0;
 	descriptor->bits.p = 1;
 	descriptor->isr_mid = (uint16_t)((isr >> 16) & 0xFFFF);
-	descriptor->isr_high = (uint32_t)((isr >> 32)); // & 0xFFFFFFFF);
+	descriptor->isr_high = (uint32_t)((isr >> 32UL)); // & 0xFFFFFFFF);
 	descriptor->reserved = 0;
 
 	idtr.base = (uintptr_t)&idt[0];
@@ -199,7 +203,7 @@ disable_interrupts(void)
 }
 
 static void
-kbd_irq_handler(ATTR(unused) regs_t *r)
+kbd_irq_handler(ATTR(unused) regs_t *__owned r)
 {
 	unsigned char scan_code = inb(0x60);
 	add_character_pressed();
@@ -207,14 +211,14 @@ kbd_irq_handler(ATTR(unused) regs_t *r)
 	add_most_recent_char(to_character(scan_code));
 }
 static void
-timer_handler(ATTR(unused) regs_t *r)
+timer_handler(ATTR(unused) regs_t *__owned r)
 {
 	if (countdown > 0)
 		countdown--;
 	timer_ticks++;
 }
 static void
-spurious_interrupt(ATTR(unused) regs_t *r)
+spurious_interrupt(ATTR(unused) regs_t *__owned r)
 {
 	ASM("nop");
 	ASM("nop");
@@ -224,21 +228,21 @@ spurious_interrupt(ATTR(unused) regs_t *r)
 static void
 fill_irq_table(void)
 {
-	extern void irq0(regs_t *);
-	extern void irq1(regs_t *);
-	extern void irq3(regs_t *);
-	extern void irq4(regs_t *);
-	extern void irq5(regs_t *);
-	extern void irq6(regs_t *);
-	extern void irq7(regs_t *);
-	extern void irq8(regs_t *);
-	extern void irq9(regs_t *);
-	extern void irq10(regs_t *);
-	extern void irq11(regs_t *);
-	extern void irq12(regs_t *);
-	extern void irq13(regs_t *);
-	extern void irq14(regs_t *);
-	extern void irq15(regs_t *);
+	extern void irq0(regs_t *__owned);
+	extern void irq1(regs_t *__owned);
+	extern void irq3(regs_t *__owned);
+	extern void irq4(regs_t *__owned);
+	extern void irq5(regs_t *__owned);
+	extern void irq6(regs_t *__owned);
+	extern void irq7(regs_t *__owned);
+	extern void irq8(regs_t *__owned);
+	extern void irq9(regs_t *__owned);
+	extern void irq10(regs_t *__owned);
+	extern void irq11(regs_t *__owned);
+	extern void irq12(regs_t *__owned);
+	extern void irq13(regs_t *__owned);
+	extern void irq14(regs_t *__owned);
+	extern void irq15(regs_t *__owned);
 	irq_install_handler(0, timer_handler);
 	irq_install_handler(1, kbd_irq_handler);
 	irq_install_handler(2, exception_handler);

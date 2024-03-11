@@ -273,4 +273,5 @@ to_character(uint8_t scan_code)
 			return ' ';
 		}
 	}
+  return 0;
 }

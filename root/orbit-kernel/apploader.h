@@ -1,5 +1,6 @@
 #ifndef APPLOADER_H
 #define APPLOADER_H
+#include <orbit.h>
 
 /* This may look confusing, but it is an
  * early attempt at loading "apps" without
@@ -7,6 +8,6 @@
  * is not a filesystem. */
 #define RELICS_SHELL "LOAD-APP-0908"
 void
-load_app(char *appcode, long *address);
+load_app(char *__owned appcode, long *__borrowed address);
 
 #endif /* APPLOADER_H */

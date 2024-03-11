@@ -1,24 +1,24 @@
 #ifndef __KERNEL_STRING_H
 #define __KERNEL_STRING_H
 
-#include <stddef.h>
 #include <typedefs.h>
+#include <orbit.h>
 
 uint32_t
 strlen(const char *s);
 
 int
-strcmp(const char *s1, const char *s2);
+strcmp(const char *__borrowed s1, const char *__borrowed s2);
 int
-strncmp(const char *s1, const char *s2, size_t n);
+strncmp(const char *__borrowed s1, const char *__borrowed s2, size_t n);
 
 void *
-memcpy(void *dest, void *src, size_t n);
+memcpy(void *__inout dest, void *__borrowed src, size_t n);
 void *
-memset(void *dest, int c, size_t n);
+memset(void *__inout dest, int c, size_t n);
 
 char *
-strcpy(char *dest, const char *src);
+strcpy(char *__inout dest, const char *__borrowed src);
 char *
-kernel_strncpy(char *dest, const char *src, size_t n);
+kernel_strncpy(char *__inout dest, const char *__borrowed src, size_t n);
 #endif /* __KERNEL_STRING_H */

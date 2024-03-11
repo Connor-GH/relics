@@ -1,10 +1,11 @@
 #ifndef __KERNEL_PANIC_H
 #define __KERNEL_PANIC_H
+#include <orbit.h>
 
 void
 panic(int i);
 void
-panic2(int, const char *);
+panic2(int, const char *__borrowed);
 
 #define CPU_ISSUE 0
 #define MEMORY_ISSUE 1

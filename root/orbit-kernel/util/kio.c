@@ -6,6 +6,7 @@
 #endif
 #include <ps2_keyboard.h>
 #include <stdbool.h>
+#include <orbit.h>
 
 static uint16_t *vga_buffer;
 
@@ -15,10 +16,6 @@ static uint16_t next_line_index = 1;
 // fore & back color values
 static uint8_t g_fore_color = WHITE, g_back_color = BLACK;
 enum { VGA_LENGTH = 25, VGA_WIDTH = 80, KIO_TABSIZE = 4 };
-union double_int64_convert {
-	double d;
-	uint64_t i;
-};
 
 /* https://wiki.osdev.org/Text_Mode_Cursor */
 static void
@@ -71,7 +68,7 @@ vga_entry(char ch, uint8_t fore_color, uint8_t back_color)
 
 // clear video buffer array
 static void
-clear_vga_buffer(uint16_t **buffer, uint8_t fore_color, uint8_t back_color)
+clear_vga_buffer(uint16_t **__owned buffer, uint8_t fore_color, uint8_t back_color)
 {
 	for (int y = 0; y < VGA_LENGTH; y++) {
 		for (int x = 0; x < VGA_WIDTH; x++) {
@@ -89,7 +86,7 @@ reset_video_memory(void)
 }
 // "scroll" video buffer array
 static void
-scroll_vga_buffer(uint16_t **buffer, uint8_t fore_color, uint8_t back_color)
+scroll_vga_buffer(uint16_t **__owned buffer, uint8_t fore_color, uint8_t back_color)
 {
 	for (int y = 1; y < VGA_LENGTH; y++) {
 		for (int x = 0; x < VGA_WIDTH; x++) {
@@ -165,7 +162,7 @@ static uint32_t
 digit_count(int64_t num)
 {
 	uint32_t count = 0;
-	if (num < 10)
+	if (num == 0)
 		return 1;
 	if (num < 0) {
 		num *= -1;
@@ -220,12 +217,12 @@ ulltoa(unsigned long long num, char *number)
 {
 	unsigned long long dgcount = digit_count_unsigned(num);
 	unsigned long long index = dgcount - 1;
-	char x;
 	if (num == 0 && dgcount == 1) {
 		number[0] = '0';
 		number[1] = '\0';
 	} else {
 		while (num != 0) {
+	    char x;
 			x = num % 10;
 			number[index] = x + '0';
 			index--;
@@ -239,11 +236,14 @@ ulltoa(unsigned long long num, char *number)
 // safety(2): num does not need a null byte since it is not
 // printed as a string.
 static void
-decimal_to_base(unsigned long long n, int base, bool *zero_pad)
+decimal_to_base(unsigned long long n, uint32_t base, bool *zero_pad)
 {
 	const char digits[17] = "0123456789abcdef";
 	char num[64];
 	int i = 0;
+  // tried to divide by zero
+  if (base == 0)
+    return;
 	if (n == 0 && *zero_pad == false) {
 		print_char('0');
 		return;
@@ -283,7 +283,7 @@ decimal_to_base(unsigned long long n, int base, bool *zero_pad)
 // safety: str pointer will never be overrun, however
 // unsupported bytes could be printed (mostly harmless)
 static void
-print_string(const char *str)
+print_string(const char *__owned str)
 {
 	while (*str) {
 		print_char(*str);
@@ -311,17 +311,17 @@ print_int(int num)
 	print_long((long)num);
 }
 static void
-print_unsigned_long_long(unsigned long long num, bool *zero_pad)
+print_unsigned_long_long(unsigned long long num, bool *__inout zero_pad)
 {
 	decimal_to_base((unsigned long long)num, 10, zero_pad);
 }
 static void
-print_unsigned_long(unsigned long num, bool *zero_pad)
+print_unsigned_long(unsigned long num, bool *__inout zero_pad)
 {
 	print_unsigned_long_long((unsigned long long)num, zero_pad);
 }
 static void
-print_unsigned_int(unsigned int num, bool *zero_pad)
+print_unsigned_int(unsigned int num, bool *__inout zero_pad)
 {
 	print_unsigned_long((unsigned long)num, zero_pad);
 }
@@ -330,12 +330,11 @@ print_unsigned_int(unsigned int num, bool *zero_pad)
 // safety(1): every number is null-terminated no matter what branch is taken
 // safety(2): `number' is a 64 byte buffer that will never be overrun from
 // digit_count_unsigned (which returns a max of ~20
-static const char *
-zero_extend_3(uint64_t num, char *number)
+static void
+zero_extend_3(uint64_t num, char *__owned number)
 {
 	unsigned long long dgcount = digit_count_unsigned(num);
 	unsigned long long index = dgcount - 1;
-	char x;
 
 	if (num < 10) { // 6 -> 006
 		index += 2;
@@ -355,6 +354,7 @@ zero_extend_3(uint64_t num, char *number)
 		number[3] = '\0';
 	} else {
 		while (num != 0) {
+	    char x;
 			x = num % 10;
 			number[index] = x + '0';
 			index--;
@@ -367,7 +367,7 @@ zero_extend_3(uint64_t num, char *number)
 // buf's size is guaranteed to be 64 bytes at the callsite
 // safety: no buffer overflow when these numbers are concatenated
 const char *
-milliseconds_as_seconds(uint64_t num, char *buf)
+milliseconds_as_seconds(uint64_t num, char *buf, size_t buf_size)
 {
 	size_t idx = digit_count_unsigned(num / 1000);
 
@@ -416,7 +416,6 @@ format:
 			case '0': {
 				zero_pad = true;
 				goto format;
-				break;
 			}
 			case 'i':
 			case 'd': {
@@ -543,7 +542,7 @@ format:
 #define va_start __builtin_va_start
 #define va_end __builtin_va_end
 void
-printk(const char *restrict format, ...)
+printk(const char *__borrowed restrict format, ...)
 {
 	va_list listp;
 	va_start(listp, format);
@@ -552,12 +551,13 @@ printk(const char *restrict format, ...)
 }
 
 void
-log_printk(const char *restrict format, ...)
+log_printk(const char *__borrowed restrict format, ...)
 {
 #ifdef KERNEL_LOG
+  char buf[64];
 	va_list listp;
-	va_start(listp, format);
-	printk("[%s] ", PIT_IRQ_timer_get_current_time_since_boot());
+  va_start(listp, format);
+	printk("[%s] ", PIT_IRQ_timer_get_current_time_since_boot(buf));
 	actual_print(format, &listp);
 	va_end(listp);
 #endif

@@ -1,6 +1,5 @@
 #include <kio.h>
 #include <pit.h>
-#include <inttypes.h>
 #include <asm/wrappers.h>
 #include <stdbool.h>
 #define PIT_FREQUENCY 1193182
@@ -30,12 +29,12 @@ millisleep(uint64_t millis)
 void
 reprogram_timer(uint16_t hz)
 {
+	uint16_t divisor = (uint16_t)(PIT_FREQUENCY / hz);
+	uint8_t command_byte = 0;
 	if (hz == 0) {
 		log_printk("Hz cannot be zero, not reprogramming.\n");
 		return;
 	}
-	uint16_t divisor = (uint16_t)(PIT_FREQUENCY / hz);
-	uint8_t command_byte = 0;
 	command_byte |= 0 << 0; // BCD; bit 0
 	command_byte |= 3 << 1; // Square Wave mode; bits 1-3
 	command_byte |= 3 << 4; // RW mode LSB then MSB; bits 4-5

@@ -1,7 +1,5 @@
 #include <apploader.h>
 #include <kio.h>
-#include <inttypes.h>
-#include <string.h>
 #include <orbit-kernel/orbit.h>
 
 #define MEMORY_SIZE (32768 * 1024) - 0x7c00
@@ -11,7 +9,7 @@
  * The appcode is just a magic number that
  * indicates the pattern we search memory for. */
 void
-load_app(ATTR(unused) char *looking_for, ATTR(unused) long *address)
+load_app(ATTR(unused) char *__owned looking_for, ATTR(unused) long *__borrowed address)
 {
 	/* Commented out because "app" loading is a
      * work-in-progress and I'd rather save

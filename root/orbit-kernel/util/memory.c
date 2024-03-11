@@ -1,8 +1,8 @@
-#include <stddef.h>
 #include <stdbool.h>
 #include <memory.h>
 #include <kio.h>
 
+#if 0
 #define END_OF_MEM (0x1CE8FFFF)
 #define MEMSTART (0xC0000)
 
@@ -103,7 +103,7 @@ malloc(size_t size)
 		return NULL;
 }
 void
-free(void *ptr)
+free(void *__owned ptr)
 {
 	if (ptr == NULL) {
 		printk("Tried to free NULL pointer\n");
@@ -117,3 +117,4 @@ free(void *ptr)
 	}
 	printk("Invalid free issue\n");
 }
+#endif

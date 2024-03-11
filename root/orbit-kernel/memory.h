@@ -1,6 +1,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 #include <typedefs.h>
+#include <orbit.h>
 
 /* This file is a working project;
  * nothing in memory.c is complete. */
@@ -15,6 +16,6 @@ mem_into_pages(void);
 void *
 malloc(size_t size);
 void
-free(void *ptr);
+free(void *__owned ptr);
 
 #endif /* MEMORY_H */

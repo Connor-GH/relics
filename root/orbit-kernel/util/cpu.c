@@ -68,7 +68,8 @@ has_eflag(unsigned long mask)
 	return !!((f0 ^ f1) & mask);
 }
 void
-cpuid_call(u32 id, u32 cnt, u32 *a, u32 *b, u32 *c, u32 *d)
+cpuid_call(u32 id, u32 cnt, u32 *__owned a, u32 *__owned b, u32 *__owned c, 
+           u32 *__owned d)
 {
 	__asm__ __volatile__("movl $0, %%eax\t\n"
 						 "cpuid\t\n"

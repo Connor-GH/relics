@@ -1,7 +1,6 @@
 #ifndef E820_H
 #define E820_H
 #include <orbit.h>
-#include <inttypes.h>
 
 enum e820_type {
 	E820_TYPE_USABLE = 1,
@@ -12,9 +11,10 @@ enum e820_type {
 	E820_TYPE_PMEM = 7
 };
 
-#define E820_MAX_ENTRIES \
-	100 // arbitrary, but we want to be below \
-		// KERNEL_LOCATION
+// arbitrary, but we want to be below 
+// KERNEL_LOCATION
+#define E820_MAX_ENTRIES 100 
+
 struct e820_map_64 {
 	uint64_t baseaddr;
 	uint64_t length;

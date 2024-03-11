@@ -1,6 +1,7 @@
 #ifndef IDT_H
 #define IDT_H
 #include <typedefs.h>
+#include <orbit.h>
 
 typedef struct __attribute__((packed)) {
 	uint64_t r15;
@@ -29,7 +30,7 @@ typedef struct __attribute__((packed)) {
 
 //__attribute__((no_caller_saved_registers))
 void
-exception_handler(regs_t *r);
+exception_handler(regs_t *__owned r);
 
 //void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags, uint8_t ist);
 void

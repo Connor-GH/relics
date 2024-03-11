@@ -7,3 +7,8 @@
 /cscope.out
 /compile_commands.json
 /.cache/**
+
+
+# Added by cargo
+
+/target

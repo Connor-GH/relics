@@ -17,7 +17,7 @@
 #define DATA_SEGMENT 0xA
 #define GDT_MAX_ENTRIES 8192
 extern void
-gdt_reload(struct gdt_ptr *);
+gdt_reload(struct gdt_ptr *__borrowed);
 
 static struct gdt_ptr gdtr;
 
