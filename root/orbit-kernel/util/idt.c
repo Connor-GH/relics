@@ -147,7 +147,7 @@ exception_handler(regs_t *__owned r)
 		decipher_error_code(r->error_code);
 		printk("%s\n", exceptions[r->irq]);
     if (r->irq == 0xe) {
-      printk("At %lx\n", (void *)r->rip);
+      printk("At %%rip=%lx\n", (void *)r->rip);
     }
     panic_irq("Halting now.");
 	} else if (32 <= r->irq && r->irq < 32 + 16) {

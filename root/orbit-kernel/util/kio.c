@@ -1,5 +1,6 @@
 #include <kio.h>
 #include <memory.h>
+#include <stdint.h>
 #ifdef KERNEL_LOG
 #include <irq.h>
 #include <cpu.h>
@@ -508,6 +509,13 @@ format:
 				decimal_to_base(o, 8, &zero_pad);
 				break;
 			}
+      case 'p': {
+        void *ptr = va_arg(*argp, void *);
+        print_char('0');
+        print_char('x');
+        decimal_to_base((uintptr_t)ptr, 16, &zero_pad);
+        break;
+      }
 			case 'c': {
 				int c = va_arg(*argp, int);
 				putchark(c);
@@ -529,6 +537,7 @@ format:
 #endif
 
 			default: {
+        printk("Format unimplemented: %c\n", *format);
 				format--;
 				break;
 			}
