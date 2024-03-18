@@ -8,6 +8,8 @@ uint32_t
 strlen(const char *s);
 
 int
+memcmp(const void *__borrowed s1, const void *__borrowed s2, size_t n);
+int
 strcmp(const char *__borrowed s1, const char *__borrowed s2);
 int
 strncmp(const char *__borrowed s1, const char *__borrowed s2, size_t n);

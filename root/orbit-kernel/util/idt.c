@@ -146,8 +146,13 @@ exception_handler(regs_t *__owned r)
 		printk("At: %x\n", r->rsp);
 		decipher_error_code(r->error_code);
 		printk("%s\n", exceptions[r->irq]);
+    // page fault
     if (r->irq == 0xe) {
-      printk("At %%rip=%lx\n", (void *)r->rip);
+      uint64_t cr2;
+      ASM("mov %%cr2, %0\t\n" 
+          : "=r"(cr2));
+      printk("At %lx %s\n", cr2, "PLACEHOLDER");
+      printk("%%rip=%lx\n", (void *)r->rip);
     }
     panic_irq("Halting now.");
 	} else if (32 <= r->irq && r->irq < 32 + 16) {

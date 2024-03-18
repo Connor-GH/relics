@@ -23,26 +23,25 @@ strlen(const char *__borrowed s)
  * checking every array element in regards to
  * s1 is no issue.
  */
+
+int memcmp(const void *__borrowed s1, const void *__borrowed s2, size_t n) {
+	for (size_t i = 0; i < n; i++) {
+		if (((const char *)s1)[i] == ((const char *)s2)[i])
+			continue;
+		return (((const char *)s1)[i] - ((const char *)s2)[i]);
+	}
+  return 0;
+}
 int
 strcmp(const char *__borrowed s1, const char *__borrowed s2)
 {
-	for (size_t i = 0; i < strlen(s1); i++) {
-		if (s1[i] - s2[i] == 0)
-			continue;
-		return s1[i] - s2[i];
-	}
-	return 0;
+  return memcmp(s1, s2, strlen(s1));
 }
 
 int
 strncmp(const char *__borrowed s1, const char *__borrowed s2, size_t n)
 {
-	for (size_t i = 0; i < n; i++) {
-		if (s1[i] == s2[i])
-			continue;
-		return s1[i] - s2[i];
-	}
-	return 0;
+  return memcmp(s1, s2, n);
 }
 
 void *

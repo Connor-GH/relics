@@ -13,7 +13,7 @@ int 0x10
 
 #mov sp, 0x8000
 #mov bp, sp
-print_char '#'
+# print_char '#'
 
 .set E820_SMAP_SIZE, 0x1000
 .set SMAP_SIGNATURE, 0x534D4150 # 'SMAP'
@@ -49,7 +49,7 @@ je out
 
 add di, cx
 
-print_char '>'
+# print_char '>'
 jmp loop
 
 out:
@@ -57,12 +57,12 @@ mov [0x496], si
 jmp continue
 
 error_sig:
-print_char 'S'
+# print_char 'S'
 cli
 hlt
 
 error_size:
-print_char 's'
+# print_char 's'
 cli
 hlt
 
@@ -151,6 +151,7 @@ ret
 .no_long_mode:
 hlt
 
+# TODO better paging
 
 # switching to 64-bit long mode
 setup_paging_64bit:
@@ -160,7 +161,7 @@ mov ax, 0b01011100
 mov eax,0xA0
 mov cr4,eax
 #
-mov edi,0x100000 # first 1MiB is reserved for bios
+mov edi, 0x100000 # first 1MiB is reserved for bios
 
 # PD: 2 MiB pages
 mov eax,0x83 # starts at 0x000000

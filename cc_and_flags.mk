@@ -88,7 +88,8 @@ ifneq ($(DCC), gdc)
   endif # if dmd/ldc
 else
 	_DFLAGS += $(COMMON_FLAGS) -march=$(MARCH) -fno-druntime -defaultlib=none \
-			   -fno-stack-protector -Wall -Werror $(DFLAGS)
+			   -fno-stack-protector -Wall -Werror -mno-sse -mno-avx -mno-3dnow \
+				 -mno-red-zone $(DFLAGS)
 	_LD_DFLAGS +=
 	GDC_XD = -xd
 endif # if gdc

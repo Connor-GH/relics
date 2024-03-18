@@ -20,13 +20,15 @@
 #if defined(__has_builtin) && __has_builtin(__builtin_unreachable)
 #define UNREACHABLE() __builtin_unreachable()
 #else
-ATTR(noreturn) inline void unreachable_func(void) {}
+ATTR(noreturn) inline void unreachable_func(void)
+{
+}
 #define UNREACHABLE() (unreachable_func())
 #endif
 
 #ifdef __clang__
 #define NOOPT ATTR(optnone)
-#else 
+#else
 #define NOOPT ATTR(optimize("O0"))
 #endif
 
@@ -34,7 +36,7 @@ ATTR(noreturn) inline void unreachable_func(void) {}
 #define CODE32 ASM(".code32\t\n")
 #define CODE64 ASM(".code64\t\n")
 
-/* type annotations */ 
+/* type annotations */
 // instructs that a type will be changed.
 #define __owned
 // instructs that a type will *not* be changed.

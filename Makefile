@@ -52,7 +52,7 @@ OS_CFLAGS = $(COMMON_OS_CFLAGS) -march=x86-64 \
 			-mno-red-zone $(KERNEL_IVARS) -mno-avx \
 			-mno-sse -mno-3dnow -mcmodel=kernel --sysroot=$(SYSROOT) \
 			-D__kernel -DKERNEL_LOG $(KCFLAGS)
-OS_LDFLAGS = -nostdlib -z max-page-size=0x10000 $(LDFLAGS) $(KLDFLAGS)
+OS_LDFLAGS = -nostdlib -z max-page-size=0x10000 $(KLDFLAGS)
 
 
 ifeq ($(FEATURE_FLAGS),)
@@ -161,11 +161,13 @@ $(OBJECTS_LIBOS): $(BIN)/%.o : $(LIBOSDIR)/apps/%.c
 together:
 	$(LD) -o $(BIN)/boot.bin $(BIN)/boot.o \
 		 --oformat binary -e _start -m elf_x86_64 --section-start=.text=0x7c00 # -Ttext 0x7c00
-	$(LD) $(OS_LDFLAGS) -o $(BIN)/full_kernel.bin -m elf_x86_64 --section-start=.text=0x1000 \
+	$(LD) $(OS_LDFLAGS) -o $(BIN)/full_kernel.elf -m elf_x86_64 --section-start=.text=0x1000 \
 		$(BIN)/kernel_entry.o \
 		$(BIN)/kernel.o $(BIN)/isr.o $(BIN)/idt-asm.o \
 		$(BIN)/gdt-asm.o $(OBJECTS_UTIL) \
-		$(OBJECTS_LIBOS) $(D_OBJECTS) --oformat binary
+		$(OBJECTS_LIBOS) $(D_OBJECTS) # --oformat binary
+	$(PREFIX)objcopy --only-keep-debug $(BIN)/full_kernel.elf kernel.sym
+	$(PREFIX)objcopy -O binary $(BIN)/full_kernel.elf $(BIN)/full_kernel.bin
 	@cat $(BIN)/boot.bin $(BIN)/full_kernel.bin $(BIN)/zeroes.bin > $(BIN)/OS.bin
 
 run:

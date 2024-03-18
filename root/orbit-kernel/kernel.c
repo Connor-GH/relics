@@ -54,7 +54,7 @@ init_kernel(void)
 	reprogram_timer(1000); // tick every ms
 	printk("Sleeping for one second!\n");
 	millisleep(1000);
-	get_mem_map();
+  get_mem_map();
   log_printk("Halting!\n");
   ASM("cli; hlt");
   // println_d("Fantastic!");

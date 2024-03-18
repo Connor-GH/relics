@@ -18,7 +18,8 @@ typedef struct cpu_features_struct {
 extern cpu_features_struct cpu_features;
 void __attribute__((noreturn)) halt(void);
 void
-cpuid_call(u32 id, u32 cnt, u32 *__owned a, u32 *__owned b, u32 *__owned c, u32 *__owned d);
+cpuid_call(u32 id, u32 cnt, u32 *__owned a, u32 *__owned b, u32 *__owned c,
+		   u32 *__owned d);
 void
 cpuflags(void);
 void
