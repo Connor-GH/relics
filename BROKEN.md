@@ -8,4 +8,4 @@ ld period (right now)
 
 mold period (right now)
 
-Compiling with optimizations for malloc() code
+building without optimizations (bootloader needs to be rewritten)

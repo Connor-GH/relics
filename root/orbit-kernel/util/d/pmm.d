@@ -89,5 +89,14 @@ pmem_map(immutable e820_map_64 *e820_map, uint e820_count)
 	printk("%s (%p)\n", s2, s2);
 	kfree(s2);
 	kfree(s);
+  // try to destroy the heap
+  for (int i = 0; i < 1024; i++) {
+    void *m = kmalloc(24);
+    if (m == null) {
+      panic(MEMORY_ISSUE);
+    }
+    printk("%llu\n", s.to_size_t);
+    // explicitly don't free
+  }
 	mixin(safe_asm!("cli; hlt"));
 }

@@ -143,6 +143,7 @@ assembly:
 	$(AS) $(OS_AFLAGS) $(KERNELDIR)/util/isr.S -o $(BIN)/isr.o
 	$(AS) $(OS_AFLAGS) $(KERNELDIR)/util/idt.S -o $(BIN)/idt-asm.o
 	$(AS) $(OS_AFLAGS) $(KERNELDIR)/util/gdt.S -o $(BIN)/gdt-asm.o
+	$(AS) $(OS_AFLAGS) $(KERNELDIR)/util/paging.S -o $(BIN)/paging-asm.o
 	head -c 10240K < /dev/zero > $(BIN)/zeroes.bin
 
 kernel:
@@ -164,14 +165,16 @@ together:
 	$(LD) $(OS_LDFLAGS) -o $(BIN)/full_kernel.elf -m elf_x86_64 --section-start=.text=0x1000 \
 		$(BIN)/kernel_entry.o \
 		$(BIN)/kernel.o $(BIN)/isr.o $(BIN)/idt-asm.o \
-		$(BIN)/gdt-asm.o $(OBJECTS_UTIL) \
-		$(OBJECTS_LIBOS) $(D_OBJECTS) # --oformat binary
+		$(BIN)/gdt-asm.o $(BIN)/paging-asm.o $(OBJECTS_UTIL) \
+		$(OBJECTS_LIBOS) $(D_OBJECTS) -Tlinker.ld # --oformat binary
 	$(PREFIX)objcopy --only-keep-debug $(BIN)/full_kernel.elf kernel.sym
 	$(PREFIX)objcopy -O binary $(BIN)/full_kernel.elf $(BIN)/full_kernel.bin
 	@cat $(BIN)/boot.bin $(BIN)/full_kernel.bin $(BIN)/zeroes.bin > $(BIN)/OS.bin
 
 run:
 	$(QEMU_RUN)
+$(BINDIR) $(OBJDIR):
+	mkdir -p $@
 
 format:
 	@find . -iname *.h -o -iname *.c | xargs clang-format -style=file:.clang-format -i

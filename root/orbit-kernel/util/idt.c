@@ -5,11 +5,20 @@
 #include <orbit.h>
 #include <orbit-kernel/string.h>
 #define IDT_MAX_DESCRIPTORS 256
-#define GDT_CS64_OFFSET ret_gdt_offset()
+#define GDT_CS64_OFFSET 0x8 //ret_gdt_offset()
 #define TSS_IST_EXCEPTION 1
 #define ISR(isr_stub, n)        \
 	extern void isr_stub(void); \
 	idt_install_handler(isr_stub, n)
+
+#define PAGE_FAULT_PRESENT (1 << 0)
+#define PAGE_FAULT_WRITE (1 << 1)
+#define PAGE_FAULT_USER (1 << 2)
+#define PAGE_FAULT_RESERVED_WRITE (1 << 3)
+#define PAGE_FAULT_INSN_FETCH (1 << 4)
+#define PAGE_FAULT_PROT_KEY_VIOLATION (1 << 5)
+#define PAGE_FAULT_SHADOW_STACK (1 << 6)
+#define PAGE_FAULT_SGX (1 << 7)
 
 #define PRETTY_PRINT_INT(x)             \
 	printk("%s: %lu (%x)\n", #x, x, x); \
@@ -55,8 +64,9 @@ irq_install_handler(int irq, void (*handler)(regs_t *__owned r))
 	irq_handlers[irq] = handler;
 }
 
+// todo size-related issues, please link properly
 static void
-decipher_error_code(uint64_t error_code)
+decipher_error_code_nonpagefault(uint64_t error_code)
 {
 	printk("This error code was caused for the following reasons: \n");
 	if (error_code % 2 != 0) {
@@ -82,6 +92,27 @@ decipher_error_code(uint64_t error_code)
 		break;
 	}
 	printk("In the index: %lu\n", (error_code & 0x0000FFFF) >> 3);
+}
+
+static void decipher_page_fault_error_code(uint64_t error_code) {
+	printk("This error code was caused for the following reasons: \n");
+  if (error_code & PAGE_FAULT_PRESENT) {
+   printk("The present bit is not set.\n");
+  } else if (error_code & PAGE_FAULT_WRITE) {
+   printk("Caused by a write.\n");
+  } else if (error_code & PAGE_FAULT_USER) {
+   printk("CPL was set to 3 (user mode).\n");
+  } else if (error_code & PAGE_FAULT_RESERVED_WRITE) {
+   printk("A reserved bit was set to one.\n");
+  } else if (error_code & PAGE_FAULT_INSN_FETCH) {
+   printk("Caused by an instruction fetch.\n");
+  } else if (error_code & PAGE_FAULT_PROT_KEY_VIOLATION) {
+   printk("Caused by a Protection Key violation.\n");
+  } else if (error_code & PAGE_FAULT_SHADOW_STACK) {
+   printk("Caused by a shadow stack access.\n");
+  } else if (error_code & PAGE_FAULT_SGX) {
+   printk("Caused by an SGX violation.\n");
+  }
 }
 
 typedef struct {
@@ -143,15 +174,20 @@ exception_handler(regs_t *__owned r)
 	if (r->irq < 32) {
 		printk("**KERNEL FAULT**: ");
 		PRETTY_PRINT_INT(r->irq);
-		printk("At: %x\n", r->rsp);
-		decipher_error_code(r->error_code);
-		printk("%s\n", exceptions[r->irq]);
+		printk("%%rsp=%x\n", r->rsp);
+    if (r->irq != 0xe) {
+		  decipher_error_code_nonpagefault(r->error_code);
+    } else {
+  // TODO why does this corrupt low memory?
+      decipher_page_fault_error_code(r->error_code);
+    }
+		  printk("%s\n", exceptions[r->irq]);
     // page fault
     if (r->irq == 0xe) {
       uint64_t cr2;
-      ASM("mov %%cr2, %0\t\n" 
+      ASM("mov %%cr2, %0\t\n"
           : "=r"(cr2));
-      printk("At %lx %s\n", cr2, "PLACEHOLDER");
+      printk("Page fault at: %lx\n", cr2);
       printk("%%rip=%lx\n", (void *)r->rip);
     }
     panic_irq("Halting now.");

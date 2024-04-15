@@ -5,10 +5,10 @@
 #include <asm/wrappers.h>
 
 
-#define E820_COUNT_ADDR 0x496
-#define E820_MAP_ADDR 0x500
+#define E820_COUNT_ADDR 0x6f0
+#define E820_MAP_ADDR 0x700
 extern struct e820_map_64 *e820_map;
-struct e820_map_64 *e820_map = (struct e820_map_64 *)E820_MAP_ADDR;
+struct e820_map_64 *e820_map =  (struct e820_map_64 *)E820_MAP_ADDR;
 
 extern uint32_t e820_count;
 uint32_t e820_count = 0;
@@ -50,9 +50,10 @@ get_mem_map(void)
   // needed because GCC does not know the bounds of this pointer
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Warray-bounds"
-	const uint32_t e820_entry_count =  *((uint32_t *)E820_COUNT_ADDR);
+	const uint32_t e820_entry_count =  /**(count);*/*((uint32_t *)E820_COUNT_ADDR);
+  //e820_map = map;
   #pragma GCC diagnostic pop
-  
+
 	if (e820_entry_count > E820_MAX_ENTRIES)
 		panic2(GENERIC_ISSUE, "Too many E820 entries!");
 

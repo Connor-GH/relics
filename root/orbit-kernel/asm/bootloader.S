@@ -20,7 +20,7 @@ mov bx, KERNEL_LOCATION
  * This is the temporary solution until a disk
  * filesystem gets written.
  */
-mov dh, 53
+mov dh, 54 # 53 # # can NOT load more than 99 sectors
 
 mov ah, 0x02
 mov al, dh
@@ -49,10 +49,11 @@ or al,2
 out 0x92,al
 
 
-jmp KERNEL_LOCATION
+mov bx, KERNEL_LOCATION
+jmp bx# KERNEL_LOCATION
 hlt
 
 
-BOOT_DISK: .byte 0
+BOOT_DISK: .byte 0x0
 .fill 510 - (. - _start), 1, 0 # pad to 512 bytes
 .word 0xAA55

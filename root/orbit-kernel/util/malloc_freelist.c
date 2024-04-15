@@ -3,12 +3,13 @@
  * License: MIT. See LICENSE file for details.
  */
 
-/* 
- * This file was taken from the libmemory project 
+/*
+ * This file was taken from the libmemory project
  * and somewhat modified for our needs:
  * https://github.com/embeddedartistry/libmemory
  */
 
+#include "panic.h"
 #include <e820.h>
 #include <stdint.h>
 #include <linked_list.h>
@@ -100,8 +101,8 @@ void defrag_free_list(void)
 #pragma mark - APIs -
 
 void kmalloc_init(struct e820_map_64 *usable, size_t count)
-{	
-  // TODO will work fine when paging works above 1MiB 
+{
+  // TODO will work fine when paging works above 1MiB
   for (size_t i = 0; i < count; i++) {
     malloc_addblock((void *)usable[i].baseaddr, usable[i].length);
   }
@@ -159,6 +160,14 @@ void* kmalloc(size_t size)
 	} // else NULL
 
 	return ptr;
+}
+
+void *kmalloc_infallible(size_t size) {
+  void *p = kmalloc(size);
+  if (p == NULL) {
+    panic2(MEMORY_ISSUE, "kmalloc() failed to allocate.");
+  }
+  return p;
 }
 
 void kfree(void* ptr)

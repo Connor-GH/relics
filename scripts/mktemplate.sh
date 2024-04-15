@@ -13,7 +13,7 @@ usage() {
 template() {
   if [[ "$1" = "c" ]]; then
     if [[ ! -z "$2" ]]; then
-      printf "#ifndef $2_H\n#define $2_H\n#endif /* $2_H */\n" > "$FILEDIR/$2.h"
+      printf "#ifndef __$2_H\n#define __$2_H\n#endif /* __$2_H */\n" > "$FILEDIR/$2.h"
       printf "#include <$2.h>\n\n" > "$FILEDIR/$2.c"
     fi 
   elif [[ "$1" = "d" ]]; then

@@ -7,6 +7,7 @@
 #include <pic.h>
 #include <pit.h>
 #include <gdt.h>
+#include <paging.h>
 #include <e820.h>
 
 
@@ -54,10 +55,8 @@ init_kernel(void)
 	reprogram_timer(1000); // tick every ms
 	printk("Sleeping for one second!\n");
 	millisleep(1000);
-  get_mem_map();
-  log_printk("Halting!\n");
-  ASM("cli; hlt");
-  // println_d("Fantastic!");
+  paging_init();  // TODO can't access mem over 1MiB
+  get_mem_map(); // will crash here
 	relics_shell("> ");
 	for (;;) {
 		__asm__ __volatile__("hlt");

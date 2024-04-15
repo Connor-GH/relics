@@ -2,6 +2,7 @@
 #include <cpu.h>
 #include <kio.h>
 #include <orbit-kernel/orbit.h>
+#include <stdbool.h>
 // bitops, cpuflags
 #define _UL(x) ((unsigned long)x)
 #define _BITUL(x) (_UL(1) << (x))
@@ -23,7 +24,7 @@ cpu_features_struct cpu_features = {
 	.avx512 = 0,
 };
 
-static int
+static bool
 has_fpu(void)
 {
 	u16 fcw = 0, fsw = 0;
@@ -51,7 +52,7 @@ has_fpu(void)
 #define POPF "popfl"
 #endif /* __x86_64 */
 
-static int
+static bool
 has_eflag(unsigned long mask)
 {
 	unsigned long f0 = 0, f1 = 0;
@@ -68,23 +69,23 @@ has_eflag(unsigned long mask)
 	return !!((f0 ^ f1) & mask);
 }
 void
-cpuid_call(u32 id, u32 cnt, u32 *__owned a, u32 *__owned b, u32 *__owned c, 
+cpuid_call(u32 id, u32 cnt, u32 *__owned a, u32 *__owned b, u32 *__owned c,
            u32 *__owned d)
 {
-	__asm__ __volatile__("movl $0, %%eax\t\n"
+	__asm__ __volatile__("movl %0, %%eax\t\n"
 						 "cpuid\t\n"
 						 : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d)
 						 : "0"(id), "2"(cnt));
 }
 
-static int
+static bool
 has_sse(void)
 {
 	u32 a, b, c, d;
 	a = b = c = d = 0;
 
 	cpuid_call(0x1, 0, &a, &b, &c, &d);
-	if ((d & (1 << 25)) == 0) {
+	if ((d & CPUID_FEAT_EDX_SSE) && (d & CPUID_FEAT_EDX_FXSR)) {
 		/* storage for FPU to return to and such, aligned for performance */
 		char fxsave_region[512] __attribute__((aligned(16)));
 		__asm__ __volatile__("fxsave %0" : : "m"(fxsave_region));
@@ -99,20 +100,19 @@ has_sse(void)
 							 :
 							 :
 							 :);
-		/* TODO: check for fxsr bit in CPUID */
 
-		return 1;
+		return true;
 	} else {
 		log_printk("Something went wrong with the SSE process\n");
-		return 0;
+		return false;
 	}
 }
-void
+/*void
 test_fpu(volatile int a, volatile int b)
 {
 	volatile float k = (volatile float)a / (volatile float)b;
 	printk("%d\n", (int)k);
-}
+}*/
 
 void
 cpuflags(void)
@@ -141,6 +141,110 @@ cpuflags(void)
 		HALT;
 	}
 }
+static void model_family_stepping(void) {
+  u32 a, b, c, d;
+  u8 model = 0;
+  u16 family = 0;
+  u8 processor_stepping = 0;
+  cpuid_call(0x1, 0, &a, &b, &c, &d);
+  processor_stepping = a & 0xF; // 15
+  model = (a >> 4) & 0xF;
+  family = (a >> 8) & 0xF;
+  if (family == 0xF) {
+    family += (a >> 20) & 0xFF; // extended family id
+  }
+  if (family == 0xF || family == 0x6) {
+    model += ((a >> 16) & 0xFF) << 4; // extended model
+  }
+  log_printk("CPU Model=%x Family=%x Stepping=%x\n", model, family, processor_stepping);
+
+}
+static void remaining_features(void) {
+  u32 a, b, c, d;
+struct cpuid_struct {
+    u32 feature;
+    const char *const feature_string;
+  };
+  a = b = c = d = 0;
+  cpuid_call(CPUID_EAX_GETFEATURES, 0, &a, &b, &c, &d);
+  const struct cpuid_struct cpuidstruct_ecx[31] = {
+    {CPUID_FEAT_ECX_SSE3, "sse3"},
+    {CPUID_FEAT_ECX_PCLMUL, "pclmul"},
+    {CPUID_FEAT_ECX_DTES64, "dtes64"},
+    {CPUID_FEAT_ECX_MONITOR, "monitor"},
+    {CPUID_FEAT_ECX_DS_CPL, "ds_cpl"},
+    {CPUID_FEAT_ECX_VMX, "vmx"},
+    {CPUID_FEAT_ECX_SMX, "smx"},
+    {CPUID_FEAT_ECX_EST, "est"},
+    {CPUID_FEAT_ECX_TM2, "tm2"},
+    {CPUID_FEAT_ECX_SSSE3, "ssse3"},
+    {CPUID_FEAT_ECX_CID, "cid"},
+    {CPUID_FEAT_ECX_SDBG, "sdbg"},
+    {CPUID_FEAT_ECX_FMA, "fma"},
+    {CPUID_FEAT_ECX_CX16, "cx16"},
+    {CPUID_FEAT_ECX_XTPR, "xtpr"},
+    {CPUID_FEAT_ECX_PDCM, "pdcm"},
+    {CPUID_FEAT_ECX_PCID, "pcid"},
+    {CPUID_FEAT_ECX_DCA, "dca"},
+    {CPUID_FEAT_ECX_SSE4_1, "sse4_1"},
+    {CPUID_FEAT_ECX_SSE4_2, "sse4_2"},
+    {CPUID_FEAT_ECX_X2APIC, "x2apic"},
+    {CPUID_FEAT_ECX_MOVBE, "movbe"},
+    {CPUID_FEAT_ECX_POPCNT, "popcnt"},
+    {CPUID_FEAT_ECX_TSC, "tsc"},
+    {CPUID_FEAT_ECX_AES, "aes"},
+    {CPUID_FEAT_ECX_XSAVE, "xsave"},
+    {CPUID_FEAT_ECX_OSXSAVE, "osxsave"},
+    {CPUID_FEAT_ECX_AVX, "avx"},
+    {CPUID_FEAT_ECX_F16C, "f16c"},
+    {CPUID_FEAT_ECX_RDRAND, "rdrand"},
+    {CPUID_FEAT_ECX_HYPERVISOR, "hypervisor"},
+  };
+  struct cpuid_struct cpuidstruct_edx[31] = {
+    {CPUID_FEAT_EDX_FPU, "fpu"},
+    {CPUID_FEAT_EDX_VME, "vme"},
+    {CPUID_FEAT_EDX_DE, "de"},
+    {CPUID_FEAT_EDX_PSE, "pse"},
+    {CPUID_FEAT_EDX_TSC, "tsc"},
+    {CPUID_FEAT_EDX_MSR, "msr"},
+    {CPUID_FEAT_EDX_PAE, "pae"},
+    {CPUID_FEAT_EDX_MCE, "mce"},
+    {CPUID_FEAT_EDX_CX8, "cx8"},
+    {CPUID_FEAT_EDX_APIC, "apic"},
+    {CPUID_FEAT_EDX_SEP, "sep"},
+    {CPUID_FEAT_EDX_MTRR, "mtrr"},
+    {CPUID_FEAT_EDX_PGE, "pge"},
+    {CPUID_FEAT_EDX_MCA, "mca"},
+    {CPUID_FEAT_EDX_CMOV, "cmov"},
+    {CPUID_FEAT_EDX_PAT, "pat"},
+    {CPUID_FEAT_EDX_PSE36, "pse36"},
+    {CPUID_FEAT_EDX_PSN, "psn"},
+    {CPUID_FEAT_EDX_CLFLUSH, "clflush"},
+    {CPUID_FEAT_EDX_DS, "ds"},
+    {CPUID_FEAT_EDX_ACPI, "acpi"},
+    {CPUID_FEAT_EDX_MMX, "mmx"},
+    {CPUID_FEAT_EDX_FXSR, "fxsr"},
+    {CPUID_FEAT_EDX_SSE, "sse"},
+    {CPUID_FEAT_EDX_SSE2, "sse2"},
+    {CPUID_FEAT_EDX_SS, "ss"},
+    {CPUID_FEAT_EDX_HTT, "htt"},
+    {CPUID_FEAT_EDX_TM, "tm"},
+    {CPUID_FEAT_EDX_IA64, "ia64"},
+    {CPUID_FEAT_EDX_PBE, "pbe"},
+  };
+  log_printk("Cpu features: ");
+  for (size_t i = 0; i < 31; i++) {
+    if (c & cpuidstruct_ecx[i].feature) {
+      printk("%s ", cpuidstruct_ecx[i].feature_string);
+    }
+  }
+  for (size_t i = 0; i < 31; i++) {
+    if (c & cpuidstruct_edx[i].feature) {
+      printk("%s ", cpuidstruct_edx[i].feature_string);
+    }
+  }
+  printk("\n");
+}
 
 void
 set_cpu_vendor_name(void)
@@ -164,4 +268,7 @@ set_cpu_vendor_name(void)
 	cpu_vendor_name[11] = (u8)((cpu_vendor[2] & (bitmask << 24)) >> 24);
 	cpu_vendor_name[12] = '\0';
 	log_printk("CPU Vendor: %s\n", cpu_vendor_name);
+  model_family_stepping();
+  // TODO space-related issues
+  remaining_features();
 }

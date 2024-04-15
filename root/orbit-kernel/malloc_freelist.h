@@ -12,6 +12,8 @@ malloc_addblock(void *addr, size_t size);
 #undef __malloc_init
 void *
 kmalloc(size_t s);
+void *
+kmalloc_infallible(size_t size);
 void
 kfree(void *p);
 #endif /*MALLOC_FREELIST_H */

@@ -1,11 +1,11 @@
 .section .text
 .intel_syntax noprefix
-.set KERNEL_LOCATION, 0x1000
+# .set KERNEL_LOCATION, 0x1000
 .code16
 
 .macro print_char char
 mov eax, 0xb8000
-mov ah, 0x0E
+mov ah, 0x0e
 mov bh, 0
 mov al, \char\()
 int 0x10
@@ -17,8 +17,11 @@ int 0x10
 
 .set E820_SMAP_SIZE, 0x1000
 .set SMAP_SIGNATURE, 0x534D4150 # 'SMAP'
-.set SMAP_ADDRESS, 0x500 # TODO extremely sketchy
+.set SMAP_ADDRESS, 0x700 # TODO extremely sketchy
 .set SMAP_SIZE, 20
+.set SMAP_COUNT_ADDRESS, 0x6f0 # TODO extremely sketchy
+.set SMAP_MAX_AMT, 100  # E820_MAX_ENTRIES in C
+.section .text
 e820_setup:
 mov bx, 0 # initial call needs this set to zero
 mov es, bx # make sure segment is 0, makes math easier
@@ -49,23 +52,23 @@ je out
 
 add di, cx
 
-# print_char '>'
+print_char '>'
 jmp loop
 
 out:
-mov [0x496], si
+mov [SMAP_COUNT_ADDRESS], si
+
 jmp continue
 
 error_sig:
-# print_char 'S'
+print_char 'S'
 cli
 hlt
 
 error_size:
-# print_char 's'
+print_char 's'
 cli
 hlt
-
 
 continue:
 # ds is uninitialized. lgdt uses ds as its segment so let's init it
@@ -155,19 +158,21 @@ hlt
 
 # switching to 64-bit long mode
 setup_paging_64bit:
-mov edi, 0xb8000
-mov ax, 0b01011100
 # set PAE
+#mov eax, cr4
+#mov eax, 1 << 5
 mov eax,0xA0
 mov cr4,eax
-#
+
+
 mov edi, 0x100000 # first 1MiB is reserved for bios
 
-# PD: 2 MiB pages
+# Page Directory: 2 MiB pages
+# set attributes: PRESENT + READ_WRITE + PAGE_ATTRIBUTE_TABLE
 mov eax,0x83 # starts at 0x000000
 xor edx,edx
 mov [edi],eax
-mov [edi+4],edx
+mov [edi+4],edx # sneaky way of setting top bits to zero
 add edi,8
 
 mov ecx,511*2
@@ -227,6 +232,8 @@ mov gs, ax                    # Set the G-segment to the A-register.
 mov ss, ax                    # Set the stack segment to the A-register.
 
 .extern init_kernel
+# mov rdi, SMAP_ADDRESS
+# mov rsi, SMAP_COUNT_ADDRESS
 call init_kernel
 hlt
 
